@@ -4,7 +4,9 @@ const BASE = "https://api.cohere.com";
 const KEY_STORAGE = "noted.cohere.key";
 const LANG_STORAGE = "noted.lang";
 
-const TRANSCRIBE_MODEL = "cohere-transcribe-03-2026";
+// Arabic transcribe model: Arabic-first, handles English and code-switched
+// Arabic/English speech. The `language` hint (from Settings) still guides decoding.
+const TRANSCRIBE_MODEL = "cohere-transcribe-arabic-07-2026";
 const TIDY_MODEL = "command-r7b-arabic-02-2025"; // Arabic-first, strong English too
 
 export const getKey = () => localStorage.getItem(KEY_STORAGE) || "";

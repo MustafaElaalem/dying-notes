@@ -9,9 +9,9 @@
 
 ## How it works
 
-1. Tap the mic, speak (Arabic or English), pause for two seconds to stop.
+1. Tap the mic, speak (Arabic, English, or code-switched between them), pause for two seconds to stop.
 2. The clip is converted to 16 kHz WAV in your browser and sent to
-   **Cohere Transcribe** (`cohere-transcribe-03-2026`).
+   **Cohere Transcribe Arabic** (`cohere-transcribe-arabic-07-2026`).
 3. An LLM pass (**Cohere, `command-r7b-arabic-02-2025`**) tidies the raw transcript:
    title, clean body, extracted tasks.
 4. The note is saved to **IndexedDB (Dexie)** with a lifespan: 24h, 1 week, 1 month, or immortal.
