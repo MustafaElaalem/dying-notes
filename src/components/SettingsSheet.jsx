@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getKey, setKey, getLang, setLang, hasKey } from "../cohere";
 import { db } from "../db";
 import { Icon } from "./Icons.jsx";
@@ -9,6 +9,12 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
   const [lang, setLangState] = useState(getLang());
   const [savedFlash, setSavedFlash] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   function saveKey(v) {
     setKeyState(v);
     setKey(v);
@@ -17,11 +23,14 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
   }
 
   return (
-    <div className="layer-sheet open" onClick={(e) => e.target.classList.contains("layer-sheet") && onClose()}>
+    <div className="layer-sheet open" onClick={(e) => { if (!e.target.closest(".sheet")) onClose(); }}>
       <div className="scrim" />
       <div className="sheet">
         <div className="grabber" />
-        <h3>Settings</h3>
+        <div className="sheet-head">
+          <h3>Settings</h3>
+          <button className="iconbtn small" onClick={onClose} aria-label="Close settings"><Icon name="x" size={15} /></button>
+        </div>
 
         <div className="set-group">
           <div className="lp-label">Cohere API key</div>

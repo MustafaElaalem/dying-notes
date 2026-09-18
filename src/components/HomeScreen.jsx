@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, lifeInfo } from "../db";
 import { Icon } from "./Icons.jsx";
@@ -15,6 +15,13 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e) => e.key === "Escape" && setSheetOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheetOpen]);
 
   const notes = useLiveQuery(() => db.notes.orderBy("createdAt").reverse().toArray(), [], []);
 
@@ -86,7 +93,7 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
       </button>
 
       {sheetOpen && (
-        <div className="layer-sheet" onClick={(e) => e.target.classList.contains("layer-sheet") && setSheetOpen(false)}>
+        <div className="layer-sheet" onClick={(e) => { if (!e.target.closest(".sheet")) setSheetOpen(false); }}>
           <div className="scrim" />
           <div className="sheet">
             <div className="grabber" />
