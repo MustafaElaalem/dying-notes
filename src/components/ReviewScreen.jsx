@@ -67,7 +67,13 @@ export default function ReviewScreen({ id, onDone }) {
     await updateNote(id, { tasks, title, body });
   }
 
-  const currentLifespan = note.status === "immortal" ? "immortal" : Object.entries(LIFESPANS).find(([, v]) => v.ms !== Infinity && note.expiresAt && note.expiresAt - note.createdAt === v.ms)?.[0] || "1w";
+  // The chosen lifespan is stored on the note. Legacy notes (created before it
+  // existed) fall back to deriving it from timestamps, then default to 1 week.
+  const currentLifespan = note.status === "immortal"
+    ? "immortal"
+    : note.lifespan
+      || Object.entries(LIFESPANS).find(([, v]) => v.ms !== Infinity && note.expiresAt && note.expiresAt - note.createdAt === v.ms)?.[0]
+      || "1w";
 
   return (
     <div className="screen">

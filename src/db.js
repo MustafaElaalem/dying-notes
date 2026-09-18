@@ -21,6 +21,7 @@ export async function createNote({ title = "", body = "", tasks = [], type = "te
     createdAt: now,
     expiresAt: ms === Infinity ? null : now + ms,
     status: ms === Infinity ? "immortal" : "alive",
+    lifespan: ms === Infinity ? "immortal" : lifespan,
     pinned: false
   });
 }
@@ -34,7 +35,8 @@ export async function setLifespan(id, lifespan) {
   if (!note) return;
   const ms = LIFESPANS[lifespan]?.ms ?? Infinity;
   await db.notes.update(id, {
-    expiresAt: ms === Infinity ? null : (note.createdAt > Date.now() - 1000 ? Date.now() + ms : Date.now() + ms),
+    lifespan,
+    expiresAt: ms === Infinity ? null : Date.now() + ms,
     status: ms === Infinity ? "immortal" : "alive"
   });
 }
@@ -42,6 +44,7 @@ export async function setLifespan(id, lifespan) {
 export async function reviveNote(id, lifespan = "1w") {
   const ms = LIFESPANS[lifespan].ms;
   await db.notes.update(id, {
+    lifespan,
     expiresAt: ms === Infinity ? null : Date.now() + ms,
     status: ms === Infinity ? "immortal" : "alive"
   });
@@ -56,7 +59,7 @@ export async function togglePin(id) {
     // pinning grants immortality, unpinning returns a week of life
     ...(pinned
       ? { status: "immortal", expiresAt: null }
-      : { status: "alive", expiresAt: Date.now() + LIFESPANS["1w"].ms })
+      : { status: "alive", expiresAt: Date.now() + LIFESPANS["1w"].ms, lifespan: "1w" })
   });
 }
 
@@ -69,13 +72,15 @@ export async function sweep() {
   return db.notes.where("status").equals("alive").and((n) => n.expiresAt !== null && n.expiresAt <= Date.now()).modify({ status: "dead" });
 }
 
-// Life math for the heartbeat bar
+// Life math for the heartbeat bar. The bar drains over the CHOSEN lifespan,
+// so switching to 24h restarts the bar at full, not at (24h / total age).
 export function lifeInfo(note) {
   if (note.status === "immortal") return { state: "immortal", p: 1, label: "Immortal" };
   if (note.status === "dead" || !note.expiresAt) return { state: "dead", p: 0, label: "Dead" };
-  const total = note.expiresAt - note.createdAt;
+  const chosen = LIFESPANS[note.lifespan]?.ms;
+  const total = chosen && chosen !== Infinity ? chosen : Math.max(1, note.expiresAt - note.createdAt);
   const left = note.expiresAt - Date.now();
-  const p = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0;
+  const p = Math.max(0, Math.min(1, left / total));
   const hours = left / 3.6e6;
   const label = hours < 1 ? `${Math.max(1, Math.round(left / 6e4))}m` : hours < 24 ? `${Math.round(hours)}h` : hours < 168 ? `${Math.round(hours / 24)}d` : `${Math.round(hours / 24 / 7)}w`;
   const state = p <= 0.25 ? "warn" : "good";
