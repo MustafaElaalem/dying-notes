@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDragDismiss } from "../gestures";
 import { getKey, setKey, getLang, setLang, hasKey } from "../cohere";
 import { db } from "../db";
 import { Icon } from "./Icons.jsx";
@@ -8,6 +9,7 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
   const [reveal, setReveal] = useState(false);
   const [lang, setLangState] = useState(getLang());
   const [savedFlash, setSavedFlash] = useState(false);
+  const { ref: dragRef, bind: dragBind } = useDragDismiss(onClose);
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -23,12 +25,14 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
   }
 
   return (
-    <div className="layer-sheet open" onClick={(e) => { if (!e.target.closest(".sheet")) onClose(); }}>
-      <div className="scrim" />
+    <div className="layer-sheet open">
+      <div className="scrim" onClick={onClose} />
       <div className="sheet">
-        <div className="grabber" />
         <div className="sheet-head">
-          <h3>Settings</h3>
+          <div className="drag-zone" ref={dragRef} {...dragBind()}>
+            <div className="grabber" />
+            <h3>Settings</h3>
+          </div>
           <button className="iconbtn small" onClick={onClose} aria-label="Close settings"><Icon name="x" size={15} /></button>
         </div>
 

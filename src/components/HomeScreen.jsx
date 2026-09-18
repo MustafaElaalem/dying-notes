@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, lifeInfo } from "../db";
+import { useDragDismiss } from "../gestures";
 import { Icon } from "./Icons.jsx";
 import NoteCard from "./NoteCard.jsx";
 
@@ -15,6 +16,7 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { ref: dragRef, bind: dragBind } = useDragDismiss(() => setSheetOpen(false));
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -93,11 +95,15 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
       </button>
 
       {sheetOpen && (
-        <div className="layer-sheet" onClick={(e) => { if (!e.target.closest(".sheet")) setSheetOpen(false); }}>
-          <div className="scrim" />
+        <div className="layer-sheet">
+          <div className="scrim" onClick={() => setSheetOpen(false)} />
           <div className="sheet">
-            <div className="grabber" />
-            <h3>New note</h3>
+            <div className="sheet-head">
+              <div className="drag-zone" ref={dragRef} {...dragBind()}>
+                <div className="grabber" />
+                <h3>New note</h3>
+              </div>
+            </div>
             <button className="voice-card" onClick={() => { setSheetOpen(false); onNewVoice(); }}>
               <span className="micb"><Icon name="mic" size={28} /></span>
               <span><b>Voice note</b><small>Speak naturally. It's transcribed, tidied and given a lifespan.</small></span>

@@ -1,4 +1,6 @@
-import { lifeInfo, togglePin, reviveNote, deleteNote } from "../db";
+import { useRef } from "react";
+import { useDrag } from "@use-gesture/react";
+import { lifeInfo, togglePin, reviveNote, deleteNote, updateNote } from "../db";
 import { Icon } from "./Icons.jsx";
 
 function ago(ts) {
@@ -13,9 +15,53 @@ function ago(ts) {
 export default function NoteCard({ note, onOpen }) {
   const life = lifeInfo(note);
   const dead = note.status === "dead";
+  const cardRef = useRef(null);
+  const dragged = useRef(false);
+
+  // Horizontal card gestures. touch-action: pan-y keeps vertical scrolling native.
+  // Swipe right = pin/unpin (immortality). Swipe left = kill a living note / revive a dead one.
+  // Commits the instant the threshold is crossed (no reliance on end events),
+  // and the release branch only ever springs the card back.
+  const consumed = useRef(false);
+  const bind = useDrag(({ down, movement: [mx], velocity: [vx], direction: [dx] }) => {
+    const el = cardRef.current;
+    if (!el) return;
+    if (down && Math.abs(mx) < 3) { consumed.current = false; dragged.current = false; }
+    if (down && Math.abs(mx) > 7) dragged.current = true;
+    if (down) {
+      if (consumed.current) return; // action already fired for this gesture
+      el.style.transition = "none";
+      el.style.transform = `translateX(${mx}px)`;
+      el.style.backgroundColor =
+        mx < -12 ? (dead ? "var(--good-tint)" : "var(--accent-soft)")
+        : mx > 12 ? "var(--g-sunken)" : "";
+      const left = mx < -72 || (vx < -0.9 && dx < 0 && mx < 20);
+      const right = mx > 72 || (vx > 0.9 && dx > 0 && mx > -20);
+      if (left || right) {
+        consumed.current = true;
+        try { navigator.vibrate?.(12); } catch { /* unsupported */ }
+        el.style.transition = "transform .22s cubic-bezier(.2,.9,.3,1), opacity .22s ease, background-color .22s ease";
+        el.style.transform = `translateX(${left ? -420 : 420}px)`;
+        el.style.opacity = "0.25";
+        if (left) dead ? reviveNote(note.id) : updateNote(note.id, { status: "dead" });
+        else togglePin(note.id);
+      }
+    } else {
+      // release or cancel: spring back (a committed note re-renders from the DB anyway)
+      el.style.transition = "transform .24s cubic-bezier(.2,.9,.3,1), opacity .2s ease, background-color .24s ease";
+      el.style.transform = "";
+      el.style.opacity = "";
+      el.style.backgroundColor = "";
+    }
+  }, { axis: "x", filterTaps: true });
 
   return (
-    <article className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "")} onClick={onOpen}>
+    <article
+      ref={cardRef}
+      {...bind()}
+      className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "")}
+      onClick={() => { if (dragged.current) { dragged.current = false; return; } onOpen(); }}
+    >
       {note.type === "voice" && (
         <span className="audio-chip" onClick={(e) => e.stopPropagation()}>
           <span className="pbtn"><Icon name={note.audio ? "play" : "wave"} size={13} /></span>

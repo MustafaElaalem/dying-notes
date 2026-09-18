@@ -16,7 +16,7 @@
   --tint: #F4EED9;
   --line-strong: #2A2620; --hard: #2A2620; --lift: rgba(15, 12, 9, .16);
   --accent: #2B59E0; --accent-soft: #E4EAFB; --accent-ink: #FFFFFF;
-  --good: #3E9B4F; --good-deep: #2C7438;
+  --good: #3E9B4F; --good-deep: #2C7438; --good-tint: #E7F2E5;
   --warn: #E3A00E; --warn-deep: #8A6206;
   --rec: #D33A22;
   --ghosted: #F0EDE5; --ghost-ink: #8A857A;
@@ -37,7 +37,7 @@
   --tint: #2A2620;
   --line-strong: #453F33; --hard: transparent; --lift: transparent;
   --accent: #93ACFF; --accent-soft: #26304F; --accent-ink: #0F1730;
-  --good: #7CC28A; --good-deep: #8FCE9B;
+  --good: #7CC28A; --good-deep: #8FCE9B; --good-tint: #1F2C22;
   --warn: #E5AE3C; --warn-deep: #EBC06A;
   --rec: #FF7A63;
   --ghosted: #1B1813; --ghost-ink: #7B7568;
@@ -50,6 +50,8 @@ body {
   font-family: var(--font-b); font-size: 15px; color: var(--g-ink);
   background: var(--g-bg); -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+  touch-action: manipulation; /* no double-tap zoom delay; pinch zoom still works */
+  -webkit-tap-highlight-color: transparent;
 }
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
 input, textarea { font: inherit; color: inherit; }
@@ -93,12 +95,13 @@ input, textarea { font: inherit; color: inherit; }
 .chip.active .count { background: rgba(255,255,255,.18); color: var(--g-bg); }
 
 /* ---------- grid + notes ---------- */
-.grid { flex: 1; overflow-y: auto; display: flex; gap: 11px; padding: 6px 16px 110px; scrollbar-width: none; }
+.grid { flex: 1; overflow-y: auto; display: flex; gap: 11px; padding: 6px 16px 110px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .mcol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
 .note {
   background: var(--g-card); border-radius: 18px; cursor: pointer;
   border: 1.5px solid var(--line-strong); box-shadow: var(--shadow);
   padding: 12px 12px 9px; display: flex; flex-direction: column; gap: 7px;
+  touch-action: pan-y; /* vertical scroll stays native; horizontal drags go to the gesture */
 }
 .note.tinted { background: var(--tint); }
 .note.dead { background: var(--ghosted); border-color: var(--g-hairline); box-shadow: none; }
@@ -175,6 +178,8 @@ input, textarea { font: inherit; color: inherit; }
 .grabber { width: 38px; height: 5px; border-radius: 3px; background: var(--g-hairline); margin: 4px auto 14px; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 12px; }
 .sheet-head h3 { margin: 0; }
+.drag-zone { flex: 1; min-width: 0; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.drag-zone .grabber { margin: 4px 0 10px; }
 .sheet h3 { font-family: var(--font-d); font-size: 17px; font-weight: 600; margin: 0 4px 12px; }
 .voice-card {
   display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
