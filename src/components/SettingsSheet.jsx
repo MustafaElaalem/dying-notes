@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDragDismiss } from "../gestures";
 import { getKey, setKey, getLang, setLang, hasKey } from "../cohere";
 import { db } from "../db";
+import ConfirmDialog from "./ConfirmDialog.jsx";
 import { Icon } from "./Icons.jsx";
 
 export default function SettingsSheet({ theme, onThemeChange, onClose }) {
@@ -9,6 +10,7 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
   const [reveal, setReveal] = useState(false);
   const [lang, setLangState] = useState(getLang());
   const [savedFlash, setSavedFlash] = useState(false);
+  const [confirmWipe, setConfirmWipe] = useState(false);
   const { ref: dragRef, bind: dragBind } = useDragDismiss(onClose);
 
   useEffect(() => {
@@ -67,9 +69,20 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
           </div>
         </div>
 
-        <button className="danger-zone" onClick={async () => { if (confirm("Delete every note, including the immortal ones?")) { await db.notes.clear(); onClose(); } }}>
+        <button className="danger-zone" onClick={() => setConfirmWipe(true)}>
           <Icon name="trash" size={15} />Delete all notes
         </button>
+
+        {confirmWipe && (
+          <ConfirmDialog
+            title="Delete every note?"
+            body="Even the immortals bow to this button. There is no undo."
+            confirmLabel="Delete all"
+            cancelLabel="Spare them"
+            onConfirm={async () => { await db.notes.clear(); setConfirmWipe(false); onClose(); }}
+            onClose={() => setConfirmWipe(false)}
+          />
+        )}
       </div>
     </div>
   );

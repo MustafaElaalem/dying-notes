@@ -325,8 +325,72 @@ input, textarea { font: inherit; color: inherit; }
   border: 1.5px dashed var(--rec); border-radius: 14px; padding: 11px; margin-top: 4px;
 }
 
+/* ---------- confirm dialog ---------- */
+.confirm-layer { z-index: 60; align-items: center; justify-content: center; padding: 24px; }
+.confirm-card {
+  position: relative; width: 100%; max-width: 330px;
+  background: var(--g-elev); border: 1.5px solid var(--line-strong); border-radius: 22px;
+  box-shadow: 5px 5px 0 var(--lift);
+  padding: 18px 18px 16px; text-align: center;
+  animation: sheet-in .22s cubic-bezier(.2, .9, .3, 1);
+}
+.confirm-icon {
+  width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 10px;
+  background: var(--accent-soft); color: var(--rec);
+  border: 2px solid var(--line-strong); box-shadow: 3px 3px 0 var(--lift);
+  display: grid; place-items: center;
+}
+.confirm-card h3 { font-family: var(--font-d); font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.confirm-card p { font-size: 13px; color: var(--g-meta); font-weight: 600; line-height: 1.5; margin-bottom: 14px; }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-cancel {
+  flex: 1; font-weight: 800; font-size: 13px;
+  border: 1.5px solid var(--line-strong); border-radius: 999px; padding: 10px; background: var(--g-card);
+}
+.confirm-delete {
+  flex: 1; font-weight: 800; font-size: 13px;
+  border: 2px solid var(--line-strong); border-radius: 999px; padding: 10px;
+  background: var(--rec); color: #fff; box-shadow: 3px 3px 0 var(--hard);
+}
+.confirm-delete:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--hard); }
+
+/* ---------- funeral animation ---------- */
+.note.dying {
+  pointer-events: none;
+  animation: die-float 1.15s ease-in forwards;
+}
+@keyframes die-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  20% { transform: translateY(2px) rotate(-1.5deg); opacity: 1; }
+  100% { transform: translateY(-90px) rotate(-5deg); opacity: 0; }
+}
+.note.dying::before {
+  content: ""; position: absolute; top: -15px; left: 50%; margin-left: -25px;
+  width: 50px; height: 16px; border: 3px solid #E8B33A; border-radius: 50%;
+  opacity: 0; animation: halo-pop 1.15s ease-out forwards;
+}
+@keyframes halo-pop {
+  0% { opacity: 0; transform: scale(.2); }
+  16% { opacity: 1; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.rising-ghost {
+  position: absolute; left: 50%; top: 42%; margin-left: -20px;
+  color: var(--g-secondary); z-index: 3; pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.3));
+  opacity: 0; animation: ghost-rise 1.15s ease-out forwards;
+}
+@keyframes ghost-rise {
+  0% { opacity: 0; transform: translateY(8px) scale(.7); }
+  25% { opacity: 1; transform: translateY(-12px) scale(1); }
+  100% { opacity: 0; transform: translateY(-130px) scale(1.1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .recdot, .sk, .step.active { animation: none; }
-  .sheet { animation: none; }
+  .sheet, .confirm-card { animation: none; }
+  .note.dying { animation: none; opacity: 0; }
+  .note.dying::before { opacity: 1; animation: none; }
+  .rising-ghost { opacity: 1; animation: none; }
   .fab, .opt, .voice-card, .donepill, .stopbtn, .revive { transition: none; }
 }

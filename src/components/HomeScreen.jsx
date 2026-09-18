@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, lifeInfo } from "../db";
+import { db, lifeInfo, deleteNote } from "../db";
 import { useDragDismiss } from "../gestures";
+import ConfirmDialog, { randomDeathNotice } from "./ConfirmDialog.jsx";
 import { Icon } from "./Icons.jsx";
 import NoteCard from "./NoteCard.jsx";
 
@@ -17,6 +18,25 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const { ref: dragRef, bind: dragBind } = useDragDismiss(() => setSheetOpen(false));
+  const [confirmNote, setConfirmNote] = useState(null);
+  const [deathNotice, setDeathNotice] = useState("");
+  const [dyingId, setDyingId] = useState(null);
+
+  function confirmDelete(note) {
+    setDeathNotice(randomDeathNotice());
+    setConfirmNote(note);
+  }
+
+  function handleConfirmDelete() {
+    const doomed = confirmNote;
+    setConfirmNote(null);
+    setDyingId(doomed.id);
+    // let the funeral play before the reaper collects
+    setTimeout(async () => {
+      await deleteNote(doomed.id);
+      setDyingId(null);
+    }, 1150);
+  }
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -83,7 +103,13 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
           {[0, 1].map((col) => (
             <div className="mcol" key={col}>
               {shown.filter((_, i) => i % 2 === col).map((n) => (
-                <NoteCard key={n.id} note={n} onOpen={() => onOpenNote(n.id)} />
+                <NoteCard
+                  key={n.id}
+                  note={n}
+                  dying={dyingId === n.id}
+                  onOpen={() => onOpenNote(n.id)}
+                  onRequestDelete={() => confirmDelete(n)}
+                />
               ))}
             </div>
           ))}
@@ -115,6 +141,14 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
             </div>
           </div>
         </div>
+      )}
+      {confirmNote && (
+        <ConfirmDialog
+          title="Delete this note?"
+          body={deathNotice}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setConfirmNote(null)}
+        />
       )}
     </div>
   );

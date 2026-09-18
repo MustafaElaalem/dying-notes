@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useDrag } from "@use-gesture/react";
-import { lifeInfo, togglePin, reviveNote, deleteNote, updateNote } from "../db";
+import { lifeInfo, togglePin, reviveNote, updateNote } from "../db";
 import { Icon } from "./Icons.jsx";
 
 function ago(ts) {
@@ -12,7 +12,7 @@ function ago(ts) {
   return new Date(ts).toLocaleDateString();
 }
 
-export default function NoteCard({ note, onOpen }) {
+export default function NoteCard({ note, onOpen, onRequestDelete, dying = false }) {
   const life = lifeInfo(note);
   const dead = note.status === "dead";
   const cardRef = useRef(null);
@@ -59,9 +59,10 @@ export default function NoteCard({ note, onOpen }) {
     <article
       ref={cardRef}
       {...bind()}
-      className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "")}
+      className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "") + (dying ? " dying" : "")}
       onClick={() => { if (dragged.current) { dragged.current = false; return; } onOpen(); }}
     >
+      {dying && <span className="rising-ghost"><Icon name="ghost" size={40} /></span>}
       {note.type === "voice" && (
         <span className="audio-chip" onClick={(e) => e.stopPropagation()}>
           <span className="pbtn"><Icon name={note.audio ? "play" : "wave"} size={13} /></span>
@@ -102,7 +103,7 @@ export default function NoteCard({ note, onOpen }) {
             <button className="pinbtn" aria-label={note.pinned ? "Unpin" : "Pin (makes immortal)"} onClick={(e) => { e.stopPropagation(); togglePin(note.id); }}>
               <Icon name="pin" size={13} className={note.pinned ? "pinned" : ""} />
             </button>
-            <button className="pinbtn" aria-label="Delete note" onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}>
+            <button className="pinbtn" aria-label="Delete note" onClick={(e) => { e.stopPropagation(); onRequestDelete?.(); }}>
               <Icon name="trash" size={13} />
             </button>
           </span>

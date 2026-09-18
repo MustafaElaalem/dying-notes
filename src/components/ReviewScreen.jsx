@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, updateNote, setLifespan, deleteNote, LIFESPANS } from "../db";
+import ConfirmDialog, { randomDeathNotice } from "./ConfirmDialog.jsx";
 import { Icon } from "./Icons.jsx";
 
 function AudioPlayer({ note }) {
@@ -29,6 +30,8 @@ export default function ReviewScreen({ id, onDone }) {
   const [newTask, setNewTask] = useState("");
   const [showRaw, setShowRaw] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deathNotice, setDeathNotice] = useState(randomDeathNotice());
   const hydrated = useRef(false);
 
   useEffect(() => {
@@ -126,10 +129,19 @@ export default function ReviewScreen({ id, onDone }) {
       </div>
 
       <div className="toolbar">
-        <button aria-label="Delete" onClick={async () => { await deleteNote(id); onDone(); }}><Icon name="trash" /></button>
+        <button aria-label="Delete" onClick={() => { setDeathNotice(randomDeathNotice()); setConfirmDelete(true); }}><Icon name="trash" /></button>
         <span className="toolbar-time">{new Date(note.createdAt).toLocaleString()}</span>
         {saved && <span className="saveflash">Saved</span>}
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete this note?"
+          body={deathNotice}
+          onConfirm={async () => { await deleteNote(id); onDone(); }}
+          onClose={() => setConfirmDelete(false)}
+        />
+      )}
     </div>
   );
 }
