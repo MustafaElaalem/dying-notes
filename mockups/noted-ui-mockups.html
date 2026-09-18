@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noted. UI mockups</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%232B59E0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BOARD CHROME (the presentation surface, not the app itself)
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #171512;
+  background-image: radial-gradient(1200px 600px at 70% -10%, #201d18 0%, #171512 55%);
+  color: #EDEAE4;
+  min-height: 100vh;
+}
+.board-wrap { max-width: 1480px; margin: 0 auto; padding: 44px 40px 20px; }
+
+.board-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 32px; flex-wrap: wrap; padding-bottom: 28px;
+}
+.brand h1 {
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-size: 46px; font-weight: 600; letter-spacing: -0.01em; line-height: 1;
+}
+.brand h1 .dot { color: #2B59E0; }
+.brand p { margin-top: 10px; font-size: 15px; color: #A6A198; max-width: 520px; }
+.brand p b { color: #D8D4CB; font-weight: 700; }
+.meta { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.meta span {
+  font-size: 12px; font-weight: 700; color: #C9C5BC;
+  border: 1.5px solid #2E2B25; border-radius: 999px; padding: 5px 12px;
+}
+.head-right { display: flex; flex-direction: column; gap: 14px; align-items: flex-end; }
+.tokens {
+  background: #201E1A; border: 1.5px solid #2E2B25; border-radius: 18px;
+  padding: 14px 16px; display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
+}
+.swatches { display: flex; gap: 12px; }
+.sw { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.sw i { width: 26px; height: 26px; border-radius: 9px; display: block; border: 1.5px solid #ffffff1f; }
+.sw small { font-size: 9.5px; color: #8B877E; letter-spacing: 0.02em; }
+.type-sample { border-left: 1.5px solid #2E2B25; padding-left: 22px; display: flex; gap: 18px; }
+.type-sample div { text-align: left; }
+.type-sample .tg { font-family: "Fredoka", sans-serif; font-size: 21px; font-weight: 600; line-height: 1.1; }
+.type-sample .tb { font-size: 21px; font-weight: 800; line-height: 1.1; }
+.type-sample small { display: block; font-size: 10px; color: #8B877E; margin-top: 4px; }
+#flip {
+  font-family: "Fredoka", "Nunito", sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  background: #2B59E0; color: #fff; border: 2px solid #0D0C0B; border-radius: 999px;
+  padding: 10px 20px; box-shadow: 4px 4px 0 #0D0C0B;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+#flip:hover { background: #2450C8; }
+#flip:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #0D0C0B; }
+
+.board { display: flex; flex-wrap: wrap; gap: 44px 34px; padding-bottom: 8px; }
+figure.shot { width: 397px; }
+figcaption { margin-top: 16px; padding: 0 4px; }
+figcaption b { display: block; font-size: 14.5px; font-weight: 800; color: #EDEAE4; }
+figcaption span { display: block; margin-top: 5px; font-size: 12.5px; line-height: 1.55; color: #A19D93; }
+
+.board-foot {
+  margin-top: 40px; border-top: 1.5px solid #2A2722; padding: 22px 0 44px;
+  font-size: 12.5px; line-height: 1.7; color: #8B877E; max-width: 720px;
+}
+.board-foot b { color: #B5B1A7; font-weight: 700; }
+
+:focus-visible { outline: 3px solid rgba(43, 89, 224, .55); outline-offset: 2px; border-radius: 6px; }
+
+/* ============================================================
+   PHONE FRAME + THEME TOKENS
+   Sticker-lite system: ink outlines, hard offset shadows on
+   controls, rounded Fredoka display type. Life-state colors
+   (green / amber / grey) are semantic, not decorative.
+   ============================================================ */
+.phone {
+  /* 9-step warm gray scale: every surface and text role owns one step */
+  --g-bg: #F7F3EA;        /* 1 app background */
+  --g-sunken: #EFEAE0;    /* 2 wells: audio chips, input fills */
+  --g-card: #FFFFFF;      /* 3 note cards */
+  --g-elev: #FFFFFF;      /* 4 elevated: sheets, bottom bars */
+  --g-hairline: #E3DDCF;  /* 5 hairlines and dividers */
+  --g-ph: #A59E8F;        /* 6 placeholder text */
+  --g-meta: #857E70;      /* 7 metadata: dates, captions */
+  --g-secondary: #5C574B; /* 8 secondary body text */
+  --g-ink: #232019;       /* 9 headings and primary text */
+  --paper: var(--g-bg); --card: var(--g-card); --soft: var(--g-sunken);
+  --ink: var(--g-ink); --muted: var(--g-meta); --line: var(--g-hairline);
+  --tint: #F4EED9;
+  --line-strong: #2A2620; --hard: #2A2620; --lift: rgba(15, 12, 9, .16);
+  --accent: #2B59E0; --accent-soft: #E4EAFB; --accent-ink: #FFFFFF;
+  --good: #3E9B4F; --good-deep: #2C7438; --warn: #E3A00E; --warn-deep: #8A6206;
+  --rec: #D33A22;         /* recording-in-progress and errors only */
+  --ghosted: #F0EDE5; --ghost-ink: #8A857A;
+  --shadow: 3px 3px 0 rgba(42, 38, 32, .10);
+  width: 397px; height: 834px; background: #0D0C0B; border-radius: 58px;
+  padding: 11px; position: relative; flex: none;
+  box-shadow: 0 30px 70px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.35),
+              inset 0 0 0 2px #29261f;
+}
+.phone[data-theme="dark"] {
+  /* Inverted ramp: depth comes from lightening surfaces, shadows switch off */
+  --g-bg: #15130F;        /* 1 app background */
+  --g-sunken: #1D1A15;    /* 2 wells */
+  --g-card: #262219;      /* 3 cards, lighter than the background */
+  --g-elev: #2F2A20;      /* 4 elevated: sheets, bottom bars */
+  --g-hairline: #3B352B;  /* 5 hairlines */
+  --g-ph: #7E7768;        /* 6 placeholder text */
+  --g-meta: #A29A8A;      /* 7 metadata */
+  --g-secondary: #C7BFAF; /* 8 secondary text */
+  --g-ink: #F5F1E8;       /* 9 headings and primary text */
+  --paper: var(--g-bg); --card: var(--g-card); --soft: var(--g-sunken);
+  --ink: var(--g-ink); --muted: var(--g-meta); --line: var(--g-hairline);
+  --tint: #2A2620;
+  --line-strong: #453F33; --hard: transparent; --lift: transparent;
+  --accent: #93ACFF; --accent-soft: #26304F; --accent-ink: #0F1730;
+  --good: #7CC28A; --good-deep: #8FCE9B; --warn: #E5AE3C; --warn-deep: #EBC06A;
+  --rec: #FF7A63;
+  --ghosted: #1B1813; --ghost-ink: #7B7568;
+  --shadow: none;
+}
+/* Capture mode (recording) keeps its own ink palette in both themes */
+.phone.capture {
+  /* Capture is always ink-dark; REC red is the only loud color here */
+  --paper: #15130F; --card: #262219; --ink: #F5F1E8; --muted: #A29A8A;
+  --line: #3B352B; --soft: #1D1A15; --tint: #2A2620;
+  --line-strong: #453F33; --hard: transparent; --lift: transparent;
+  --accent: #93ACFF; --accent-soft: #26304F; --accent-ink: #0F1730;
+  --good: #7CC28A; --warn: #E5AE3C;
+  --rec: #FF6B54;
+  --shadow: none;
+}
+
+.screen {
+  position: relative; height: 100%; border-radius: 47px; overflow: hidden;
+  background: var(--paper); color: var(--ink);
+  display: flex; flex-direction: column;
+  font-size: 14px; -webkit-font-smoothing: antialiased;
+}
+
+/* status bar + dynamic island */
+.statusbar {
+  position: relative; z-index: 5; flex: none;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 26px 8px; font-size: 14.5px; font-weight: 800;
+}
+.island {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 112px; height: 31px; border-radius: 16px; background: #000;
+  outline: 1px solid #ffffff12; outline-offset: -1px;
+}
+.sb-icons { display: flex; align-items: center; gap: 6px; }
+.sb-icons svg { display: block; }
+
+/* icons */
+.ic { width: 22px; height: 22px; flex: none; }
+.ic-s { width: 16px; height: 16px; }
+.ic-xs { width: 13px; height: 13px; }
+.ic-l { width: 28px; height: 28px; }
+
+/* ============================================================
+   HOME
+   ============================================================ */
+.topbar { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 16px 4px; }
+.wordmark { font-family: "Fredoka", "Nunito", sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.wordmark .dot { color: var(--accent); }
+.searchpill {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1.5px solid var(--line-strong);
+  border-radius: 999px; padding: 8px 14px; color: var(--g-ph); font-size: 13.5px;
+  box-shadow: 2px 2px 0 var(--lift);
+}
+.avatar {
+  width: 36px; height: 36px; flex: none; border-radius: 50%;
+  background: var(--soft); color: var(--ink); border: 1.5px solid var(--line-strong);
+  display: grid; place-items: center; font-size: 13px; font-weight: 800;
+}
+
+.chips { flex: none; display: flex; gap: 8px; padding: 10px 16px 6px; overflow: hidden; }
+.chip {
+  display: flex; align-items: center; gap: 5px; flex: none;
+  font-size: 12.5px; font-weight: 700; color: var(--muted);
+  background: var(--card); border: 1.5px solid var(--line-strong);
+  border-radius: 999px; padding: 6px 12px;
+}
+.chip.active { background: var(--ink); color: var(--paper); box-shadow: 2px 2px 0 var(--hard); }
+
+.grid { flex: 1; overflow: hidden; display: flex; gap: 11px; padding: 6px 15px 104px; }
+.mcol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
+.note {
+  background: var(--card); border-radius: 18px;
+  border: 1.5px solid var(--line-strong); box-shadow: var(--shadow);
+  padding: 12px 12px 9px; display: flex; flex-direction: column; gap: 7px;
+}
+.note.tinted { background: var(--tint); }
+.note.dead { background: var(--ghosted); border-color: var(--line); box-shadow: none; }
+.note.dead .note-title { color: var(--ghost-ink); }
+.note.dead .note-body, .note.dead .reminder { color: var(--ghost-ink); opacity: .8; }
+.note-title { font-family: "Fredoka", "Nunito", sans-serif; font-size: 15.5px; font-weight: 600; letter-spacing: 0; }
+.note-body { font-size: 12.8px; line-height: 1.5; color: var(--ink); opacity: .88; }
+.note-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; min-height: 18px; }
+.note-foot time { font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.note-foot .ic-xs { color: var(--muted); }
+
+/* life system: heartbeat bar + labels */
+.life-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.life { width: 42px; height: 5.5px; flex: none; border-radius: 4px; background: var(--line); overflow: hidden; }
+.hp { display: block; height: 100%; width: calc(var(--p) * 100%); border-radius: 4px; }
+.hp.good { background: var(--good); }
+.hp.warn { background: var(--warn); }
+.life-wrap .llabel { font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+.life-wrap .llabel.good { color: var(--good-deep); }
+.life-wrap .llabel.warn { color: var(--warn-deep); }
+
+/* state chips */
+.st {
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+  font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3.5px 8px;
+}
+.st-immortal { background: var(--ink); color: var(--paper); }
+.st-dead { background: var(--card); color: var(--ghost-ink); border: 1.5px solid var(--line); }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+  font-size: 10px; font-weight: 800; color: var(--accent);
+  background: var(--accent-soft); border-radius: 999px; padding: 3.5px 8px;
+}
+.revive {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: "Nunito", sans-serif; font-size: 11px; font-weight: 800; cursor: pointer;
+  color: var(--ink); background: var(--card); border: 1.5px solid var(--line-strong);
+  border-radius: 999px; padding: 4px 10px; box-shadow: 2px 2px 0 var(--lift);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.revive:active { transform: translate(2px, 2px); box-shadow: 0 0 0 rgba(0,0,0,0); }
+.revive .ic-xs { color: var(--good); }
+.dead-row { display: flex; align-items: center; justify-content: space-between; }
+
+.audio-chip {
+  display: flex; align-items: center; gap: 8px; align-self: flex-start;
+  background: var(--soft); border-radius: 999px; padding: 5px 10px 5px 5px;
+}
+.audio-chip .pbtn {
+  width: 27px; height: 27px; border-radius: 50%; flex: none;
+  background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center;
+}
+.audio-chip .wv { flex: 0 0 56px; }
+.wv { display: flex; align-items: center; gap: 2.5px; height: 18px; flex: 1; }
+.wv span { flex: 1; min-width: 1.5px; max-width: 3.5px; border-radius: 2px; background: var(--muted); height: calc(var(--h) * 100%); }
+.audio-chip time { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+
+.todo { display: flex; align-items: flex-start; gap: 8px; font-size: 12.8px; line-height: 1.45; }
+.todo + .todo { margin-top: 6px; }
+.cb {
+  width: 16px; height: 16px; flex: none; margin-top: 1px; border-radius: 5.5px;
+  border: 2px solid var(--line-strong); background: var(--card);
+  display: grid; place-items: center; color: transparent;
+}
+.todo.done .cb { background: var(--accent); border-color: var(--line-strong); color: var(--accent-ink); }
+.todo.done span { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+
+.reminder {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  font-size: 11px; font-weight: 800; color: var(--ink);
+  background: var(--soft); border-radius: 999px; padding: 5px 10px;
+}
+.note.dead .reminder { text-decoration: line-through; text-decoration-thickness: 1px; }
+.note-photo { border-radius: 12px; overflow: hidden; margin: -1px; background: var(--soft); border: 1.5px solid var(--line-strong); }
+.note-photo img { display: block; width: 100%; height: 92px; object-fit: cover; filter: saturate(.92); }
+
+/* FAB */
+.fab {
+  position: absolute; right: 18px; bottom: 26px; z-index: 30;
+  width: 66px; height: 66px; border-radius: 50%; border: 2.5px solid var(--line-strong); cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center;
+  box-shadow: 4.5px 4.5px 0 var(--hard);
+  transition: transform .14s cubic-bezier(.2, .9, .3, 1.4), box-shadow .14s ease;
+}
+.fab:active { transform: translate(3px, 3px); box-shadow: 1.5px 1.5px 0 var(--hard); }
+.fab .ic-x { display: none; }
+.sheet-open .fab .ic-mic { display: none; }
+.sheet-open .fab .ic-x { display: block; }
+
+/* sheet layer */
+.layer-sheet { position: absolute; inset: 0; z-index: 20; opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+.sheet-open .layer-sheet { opacity: 1; pointer-events: auto; }
+.scrim { position: absolute; inset: 0; background: rgba(22, 19, 16, .45); }
+.sheet {
+  position: absolute; left: 12px; right: 12px; bottom: 108px;
+  background: var(--g-elev); border: 1.5px solid var(--line-strong); border-radius: 26px;
+  padding: 10px 14px 16px; transform: translateY(14px); transition: transform .25s cubic-bezier(.2, .9, .3, 1);
+  box-shadow: 5px 6px 0 var(--lift);
+}
+.sheet-open .sheet { transform: translateY(0); }
+.grabber { width: 38px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 14px; }
+.sheet h3 { font-family: "Fredoka", "Nunito", sans-serif; font-size: 17px; font-weight: 600; margin: 0 4px 12px; }
+
+.voice-card {
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+  background: var(--accent-soft); border: 1.5px solid var(--line-strong); border-radius: 18px;
+  padding: 15px 16px; width: 100%;
+  font: inherit; text-align: left; color: inherit;
+  box-shadow: 3px 3px 0 var(--lift);
+  transition: transform .13s ease, box-shadow .13s ease;
+}
+.voice-card:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--lift); }
+.voice-card .micb {
+  width: 48px; height: 48px; flex: none; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); border: 2px solid var(--line-strong);
+  display: grid; place-items: center;
+}
+.voice-card b { display: block; font-family: "Fredoka", "Nunito", sans-serif; font-size: 16.5px; font-weight: 600; }
+.voice-card small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); line-height: 1.4; font-weight: 600; }
+.voice-card .go { margin-left: auto; color: var(--accent); }
+
+.opt-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+.opt {
+  background: var(--card); border: 1.5px solid var(--line-strong); border-radius: 16px; padding: 14px 8px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-family: "Nunito", sans-serif; font-size: 12.5px; font-weight: 800; color: var(--ink); cursor: pointer;
+  box-shadow: 2.5px 2.5px 0 var(--lift);
+  transition: transform .13s ease, box-shadow .13s ease;
+}
+.opt:active { transform: translate(2px, 2px); box-shadow: 0 0 0 rgba(0,0,0,0); }
+.opt .ic { color: var(--ink); }
+
+/* ============================================================
+   CAPTURE (recording)
+   ============================================================ */
+.cap-top { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 20px 0; }
+.cap-top .lbl { font-family: "Fredoka", "Nunito", sans-serif; font-size: 13px; font-weight: 600; color: var(--muted); }
+.iconbtn {
+  width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--line-strong); cursor: pointer;
+  background: var(--card); color: var(--ink); display: grid; place-items: center;
+  box-shadow: 3px 3px 0 var(--hard);
+}
+.cap-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 0 30px; }
+.timer { font-family: "Fredoka", "Nunito", sans-serif; font-size: 60px; font-weight: 600; letter-spacing: .01em; font-variant-numeric: tabular-nums; line-height: 1; }
+.cap-state {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 800;
+  border: 1.5px solid var(--line-strong); border-radius: 999px; padding: 5px 13px; background: var(--card);
+}
+.recdot { width: 8px; height: 8px; border-radius: 50%; background: var(--rec); animation: blink 1.6s ease infinite; }
+
+.bigwave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 118px; width: 100%; }
+.bigwave span {
+  width: 4.5px; border-radius: 3px; background: var(--rec);
+  height: calc(var(--h) * 100%); transform-origin: center;
+  animation: wave 1.05s ease-in-out calc(var(--i) * -.11s) infinite alternate;
+}
+.cap-hint { font-size: 12.5px; color: var(--muted); text-align: center; line-height: 1.5; font-weight: 600; }
+
+.live-card {
+  margin: 0 18px 18px; background: var(--card); border: 1.5px solid var(--line-strong); border-radius: 18px; padding: 12px 14px;
+}
+.live-card .lbl { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.live-card p { font-size: 13px; line-height: 1.55; color: var(--muted); font-style: italic; }
+.caret { display: inline-block; width: 2px; height: 14px; background: var(--rec); vertical-align: -2px; margin-left: 2px; animation: blink 1s step-end infinite; }
+
+.cap-controls { flex: none; display: flex; align-items: center; justify-content: center; gap: 34px; padding: 6px 0 40px; }
+.discard {
+  border: none; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer;
+  color: var(--muted); background: none; padding: 10px 14px;
+}
+.stopbtn {
+  width: 78px; height: 78px; border-radius: 50%; border: 2.5px solid var(--line-strong); cursor: pointer;
+  background: var(--rec); color: var(--accent-ink); display: grid; place-items: center;
+  box-shadow: 5px 5px 0 var(--hard);
+  transition: transform .13s ease, box-shadow .13s ease;
+}
+.stopbtn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--hard); }
+
+/* ============================================================
+   TRANSCRIBING
+   ============================================================ */
+.nav-row { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 6px; }
+.nav-row .ttl { font-family: "Fredoka", "Nunito", sans-serif; font-size: 17px; font-weight: 600; }
+.savepill {
+  border: 1.5px solid var(--line-strong); font: inherit; font-size: 12.5px; font-weight: 800;
+  color: var(--muted); background: var(--card); border-radius: 999px; padding: 7px 15px;
+}
+.steps { display: flex; gap: 7px; padding: 10px 16px 4px; flex-wrap: wrap; }
+.step {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800;
+  border-radius: 999px; padding: 6px 11px; color: var(--muted);
+  background: var(--card); border: 1.5px solid var(--line);
+}
+.step.done { color: var(--ink); border-color: var(--line-strong); }
+.step.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); animation: breathe 2s ease infinite; }
+
+.draft { margin: 10px 16px; background: var(--card); border: 1.5px solid var(--line-strong); border-radius: 18px; box-shadow: var(--shadow); padding: 15px 15px 13px; }
+.draft .audio-chip { margin-bottom: 13px; }
+.sk { border-radius: 6px; background: linear-gradient(100deg, var(--line) 30%, var(--soft) 46%, var(--line) 62%); background-size: 220% 100%; animation: shimmer 1.5s linear infinite; }
+.sk-title { height: 16px; width: 58%; margin-bottom: 12px; }
+.sk-line { height: 11px; margin-bottom: 8px; }
+.sk-task { display: flex; gap: 9px; align-items: center; margin-bottom: 9px; }
+.sk-task i { width: 15px; height: 15px; border-radius: 5px; flex: none; }
+.sk-task .sk { flex: 1; height: 11px; }
+.found {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;
+  font-size: 11.5px; font-weight: 800; color: var(--accent);
+  background: var(--accent-soft); border-radius: 999px; padding: 6px 11px;
+}
+.bg-hint { margin: 14px 22px 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); text-align: center; font-weight: 600; }
+
+/* ============================================================
+   REVIEW / EDIT
+   ============================================================ */
+.donepill {
+  border: 2px solid var(--line-strong); font-family: "Nunito", sans-serif; cursor: pointer;
+  font-size: 13px; font-weight: 800;
+  background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 8px 18px;
+  box-shadow: 3px 3px 0 var(--hard);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.donepill:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--hard); }
+.edit-scroll { flex: 1; overflow: hidden; padding: 8px 16px 0; display: flex; flex-direction: column; gap: 12px; }
+.audio-card {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--card); border: 1.5px solid var(--line-strong); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 14px;
+}
+.audio-card .pbtn {
+  width: 38px; height: 38px; border-radius: 50%; flex: none; border: 2px solid var(--line-strong); cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); display: grid; place-items: center;
+}
+.audio-card .meta b { display: block; font-size: 12.5px; font-weight: 800; }
+.audio-card .meta small { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 600; }
+.audio-card .wv span { background: var(--accent); opacity: .8; }
+.audio-card time { margin-left: auto; font-size: 11px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.ai-row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); padding: 0 4px; font-weight: 700; }
+.ai-row .badge { font-size: 10.5px; }
+.ai-row a { color: var(--accent); font-weight: 800; text-decoration: none; }
+.edit-title {
+  font-size: 23px; font-weight: 600; letter-spacing: -0.01em;
+  border: 0; background: none; color: inherit; width: 100%;
+  font-family: "Fredoka", "Nunito", sans-serif; padding: 0 4px;
+}
+.edit-body { font-size: 13.5px; line-height: 1.55; color: var(--ink); opacity: .9; padding: 0 4px; }
+.tasks-card { background: var(--card); border: 1.5px solid var(--line-strong); border-radius: 18px; box-shadow: var(--shadow); padding: 13px 14px; }
+.tasks-card .todo { font-size: 13.5px; }
+
+/* lifespan picker */
+.lifespan { padding: 0 2px; }
+.lp-label { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0 2px 7px; }
+.lp-opts { display: flex; gap: 7px; }
+.lp {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+  font-family: "Nunito", sans-serif; font-size: 11px; font-weight: 800; cursor: pointer;
+  color: var(--ink); background: var(--card); border: 1.5px solid var(--line-strong);
+  border-radius: 12px; padding: 9px 2px;
+}
+.lp.sel { background: var(--accent); color: var(--accent-ink); box-shadow: 2.5px 2.5px 0 var(--hard); }
+
+.toolbar {
+  flex: none; display: flex; justify-content: space-around; align-items: center;
+  padding: 12px 10px 26px; background: var(--g-elev);
+  border-top: 1.5px solid var(--line-strong); border-radius: 0 0 47px 47px; color: var(--muted);
+}
+.toolbar button { background: none; border: 0; color: inherit; cursor: pointer; padding: 8px; border-radius: 10px; display: grid; place-items: center; }
+.toolbar button:hover { color: var(--ink); background: var(--soft); }
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 0 46px; transform: translateY(-52px); }
+.empty .bigghost {
+  width: 108px; height: 108px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  border: 2px solid var(--line-strong); box-shadow: 4px 4px 0 var(--lift);
+  display: grid; place-items: center; margin-bottom: 14px;
+}
+.empty h2 { font-family: "Fredoka", "Nunito", sans-serif; font-size: 23px; font-weight: 600; letter-spacing: -0.01em; }
+.empty p { font-size: 13.5px; line-height: 1.6; color: var(--muted); font-weight: 600; }
+.empty p b { color: var(--ink); font-weight: 800; }
+
+/* ============================================================
+   ANIMATION + MOTION SAFETY
+   ============================================================ */
+@keyframes wave { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .15; } }
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(43, 89, 224, .25); } 50% { box-shadow: 0 0 0 6px rgba(43, 89, 224, 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bigwave span, .recdot, .caret, .sk, .step.active { animation: none; }
+  .layer-sheet, .sheet, .fab, .opt, .voice-card, .donepill, .stopbtn, #flip, .revive { transition: none; }
+}
+@media (max-width: 480px) {
+  .board-wrap { padding: 28px 18px; overflow-x: auto; }
+  .board { flex-wrap: nowrap; }
+  .head-right { align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- Icon symbols: rounded stroke set, 24px grid, 1.8 stroke -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mic" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3.5"/></g></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.3 16.3 21 21"/></g></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></g></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6h14M5 12h14M5 18h9"/></g></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.3l1.7 1.7L8.6 5"/><path d="M4 17.3l1.7 1.7 2.9-2.9"/><path d="M12.5 6.8H20M12.5 17.8H20"/></g></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M20 15.5l-4.2-4.2-8.2 8.2"/></g></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3.5h5l-.8 6.2 2.9 3H7.4l2.9-3z"/><path d="M12 12.7V20.5"/></g></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.2 5.9v12.2c0 .8.9 1.3 1.6.9l9.5-6.1c.6-.4.6-1.4 0-1.8L9.8 5c-.7-.4-1.6.1-1.6.9z" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></g></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></g></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M11 4l1.8 4.9 5 1.8-5 1.8L11 17.4l-1.8-4.9-5-1.8 5-1.8z"/><path d="M18.6 3.2l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/></g></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5s5.8 6.3 5.8 10.3a5.8 5.8 0 0 1-11.6 0C6.2 9.8 12 3.5 12 3.5z"/></g></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.6"/><circle cx="17.5" cy="5.8" r="2.6"/><circle cx="17.5" cy="18.2" r="2.6"/><path d="M8.4 10.7l6.7-3.9M8.4 13.3l6.7 3.9"/></g></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="5" rx="1.5"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9"/><path d="M10 13h4"/></g></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4.9a1.4 1.4 0 0 1 1.4-1.4h2.2a1.4 1.4 0 0 1 1.4 1.4v1.6"/><path d="M6.5 6.5l.8 12.1a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9l.8-12.1"/><path d="M10 10.5v6M14 10.5v6"/></g></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="3" fill="currentColor"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></g></symbol>
+  <symbol id="i-hourglass" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h10M7 20.5h10"/><path d="M8.3 3.5v2.4c0 2.5 7.4 3.7 7.4 6.1s-7.4 3.6-7.4 6.1v2.4"/></g></symbol>
+  <symbol id="i-infinity" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 12c-2-2.7-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.3 6-4Zm0 0c2-2.7 4-4 6-4a4 4 0 1 1 0 8c-2 0-4-1.3-6-4Z"/></g></symbol>
+  <symbol id="i-skull" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3a7.6 7.6 0 0 0-7.6 7.6c0 2.6 1.4 4.5 3.1 5.5v2.4A1.5 1.5 0 0 0 9 20h6a1.5 1.5 0 0 0 1.5-1.5v-2.4c1.7-1 3.1-2.9 3.1-5.5A7.6 7.6 0 0 0 12 3Z"/></g><circle cx="9.2" cy="11" r="1.5" fill="currentColor"/><circle cx="14.8" cy="11" r="1.5" fill="currentColor"/><path d="M11 13.5h2l-1 1.9z" fill="currentColor"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.2C7.6 16.9 3.6 13.8 3.6 9.9 3.6 7.3 5.6 5.4 8 5.4c1.6 0 3.1.9 4 2.3.9-1.4 2.4-2.3 4-2.3 2.4 0 4.4 1.9 4.4 4.5 0 3.9-4 7-8.4 10.3Z" fill="currentColor"/></symbol>
+  <symbol id="i-ghost" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a7 7 0 0 1 7 7v8.2l-2.3-1.7-2.35 1.7-2.35-1.7-2.35 1.7-2.35-1.7L5 18.7v-8.2a7 7 0 0 1 7-7Z"/></g><circle cx="9.6" cy="11.5" r="1.15" fill="currentColor"/><circle cx="14.4" cy="11.5" r="1.15" fill="currentColor"/></symbol>
+  <symbol id="s-signal" viewBox="0 0 18 12"><g fill="currentColor"><rect x="0" y="7.5" width="3" height="4.5" rx="1"/><rect x="4.8" y="5" width="3" height="7" rx="1"/><rect x="9.6" y="2.5" width="3" height="9.5" rx="1"/><rect x="14.4" y="0" width="3" height="12" rx="1" opacity=".35"/></g></symbol>
+  <symbol id="s-wifi" viewBox="0 0 17 13"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.5 4.6a10.4 10.4 0 0 1 14 0"/><path d="M4.3 7.6a6.4 6.4 0 0 1 8.4 0"/><path d="M7.1 10.5a2.4 2.4 0 0 1 2.8 0"/></g></symbol>
+  <symbol id="s-batt" viewBox="0 0 26 13"><rect x="1" y="1" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".5"/><rect x="3" y="3" width="14" height="7" rx="1.8" fill="currentColor"/><rect x="23.5" y="4.4" width="2.2" height="4.2" rx="1.1" fill="currentColor" opacity=".5"/></symbol>
+</svg>
+
+<div class="board-wrap">
+
+  <header class="board-head">
+    <div class="brand">
+      <h1>Noted<span class="dot">.</span></h1>
+      <p>Quick notes with a heartbeat. Say it, it's written down, and it lives until it dies. <b>Mortal by default, immortal by choice.</b></p>
+      <div class="meta">
+        <span>7 screens</span><span>390 × 844</span><span>9-step gray scale</span><span>Light + dark</span><span>PWA, offline-first</span>
+      </div>
+    </div>
+    <div class="head-right">
+      <div class="tokens">
+        <div class="swatches">
+          <div class="sw"><i style="background:#F7F3EA"></i><small>PAPER</small></div>
+          <div class="sw"><i style="background:#FFFFFF"></i><small>CARD</small></div>
+          <div class="sw"><i style="background:#232019"></i><small>INK</small></div>
+          <div class="sw"><i style="background:#2B59E0"></i><small>COBALT</small></div>
+          <div class="sw"><i style="background:#3E9B4F"></i><small>LIFE</small></div>
+          <div class="sw"><i style="background:#E3A00E"></i><small>FADING</small></div>
+          <div class="sw"><i style="background:#D33A22"></i><small>ALERT</small></div>
+        </div>
+        <div class="type-sample">
+          <div><div class="tg">Aa</div><small>Fredoka</small></div>
+          <div><div class="tb">Aa</div><small>Nunito</small></div>
+        </div>
+      </div>
+      <button id="flip" type="button">Flip all themes</button>
+    </div>
+  </header>
+
+  <main class="board">
+
+    <!-- 1 · HOME -->
+    <figure class="shot">
+      <div class="phone" data-theme="light">
+        <div class="screen" id="homeScreen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="sb-icons">
+              <svg width="17" height="12"><use href="#s-signal"/></svg>
+              <svg width="17" height="13"><use href="#s-wifi"/></svg>
+              <svg width="26" height="13"><use href="#s-batt"/></svg>
+            </div>
+          </div>
+          <div class="island"></div>
+
+          <div class="topbar">
+            <div class="wordmark">Noted<span class="dot">.</span></div>
+            <div class="searchpill"><svg class="ic-s"><use href="#i-search"/></svg><span>Search your notes</span></div>
+            <div class="avatar">M</div>
+          </div>
+
+          <div class="chips">
+            <div class="chip active">All</div>
+            <div class="chip"><svg class="ic-xs"><use href="#i-infinity"/></svg>Immortal</div>
+            <div class="chip"><svg class="ic-xs"><use href="#i-hourglass"/></svg>Dying</div>
+            <div class="chip"><svg class="ic-xs"><use href="#i-skull"/></svg>Dead</div>
+          </div>
+
+          <div class="grid">
+            <div class="mcol">
+              <div class="note">
+                <div class="audio-chip">
+                  <div class="pbtn"><svg class="ic-xs"><use href="#i-play"/></svg></div>
+                  <div class="wv"><span style="--h:.4"></span><span style="--h:.75"></span><span style="--h:.55"></span><span style="--h:.95"></span><span style="--h:.6"></span><span style="--h:.85"></span><span style="--h:.45"></span><span style="--h:.7"></span><span style="--h:.95"></span><span style="--h:.5"></span><span style="--h:.8"></span><span style="--h:.65"></span></div>
+                  <time>0:42</time>
+                </div>
+                <span class="badge"><svg class="ic-xs"><use href="#i-sparkle"/></svg>Tidied</span>
+                <div class="note-title">Fence quote</div>
+                <div class="note-body">Call Dad about the quote. Best so far: $1,850 from Rivera. Ask about gravel.</div>
+                <div class="note-foot">
+                  <span class="st st-immortal"><svg class="ic-xs"><use href="#i-infinity"/></svg>Immortal</span>
+                  <svg class="ic-xs"><use href="#i-pin"/></svg>
+                </div>
+              </div>
+
+              <div class="note tinted">
+                <div class="note-title">Weekend packing</div>
+                <div>
+                  <div class="todo done"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Offline maps</span></div>
+                  <div class="todo done"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Packing cubes</span></div>
+                  <div class="todo"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Toiletry bag</span></div>
+                  <div class="todo"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Camera battery</span></div>
+                </div>
+                <div class="note-foot">
+                  <span class="life-wrap"><span class="life"><span class="hp warn" style="--p:.22"></span></span><span class="llabel warn">Dies tomorrow</span></span>
+                </div>
+              </div>
+
+              <div class="note">
+                <div class="note-title">Cafe wifi</div>
+                <div class="note-body">Ground floor: solstice2024. Changes in October.</div>
+                <div class="note-foot">
+                  <span class="life-wrap"><span class="life"><span class="hp good" style="--p:.7"></span></span><span class="llabel good">5d</span></span>
+                  <time>Yesterday</time>
+                </div>
+              </div>
+            </div>
+
+            <div class="mcol">
+              <div class="note">
+                <div class="audio-chip">
+                  <div class="pbtn"><svg class="ic-xs"><use href="#i-play"/></svg></div>
+                  <div class="wv"><span style="--h:.7"></span><span style="--h:.45"></span><span style="--h:.9"></span><span style="--h:.55"></span><span style="--h:.75"></span><span style="--h:.4"></span><span style="--h:.85"></span><span style="--h:.6"></span><span style="--h:.95"></span><span style="--h:.5"></span></div>
+                  <time>0:19</time>
+                </div>
+                <span class="badge"><svg class="ic-xs"><use href="#i-sparkle"/></svg>Tidied</span>
+                <div class="note-body">Renew passport. Slots drop Tuesdays at 9. Bring the old one.</div>
+                <div class="note-foot">
+                  <span class="life-wrap"><span class="life"><span class="hp good" style="--p:.5"></span></span><span class="llabel good">1w</span></span>
+                  <time>Sep 12</time>
+                </div>
+              </div>
+
+              <div class="note">
+                <figure class="note-photo">
+                  <img src="https://picsum.photos/seed/noted-sprint-board/640/420" alt="Sprint planning board">
+                </figure>
+                <div class="note-title">Sprint board</div>
+                <div class="note-foot">
+                  <span class="life-wrap"><span class="life"><span class="hp good" style="--p:.65"></span></span><span class="llabel good">2w</span></span>
+                  <time>Sep 11</time>
+                </div>
+              </div>
+
+              <div class="note dead">
+                <div class="note-title">Dentist</div>
+                <div class="note-body">Six-month cleaning.</div>
+                <div><span class="reminder"><svg class="ic-xs"><use href="#i-clock"/></svg>Was Sep 16</span></div>
+                <div class="dead-row">
+                  <span class="st st-dead"><svg class="ic-xs"><use href="#i-skull"/></svg>Dead</span>
+                  <button class="revive" type="button"><svg class="ic-xs"><use href="#i-heart"/></svg>Revive</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="fab" type="button" aria-label="New note">
+            <svg class="ic-l ic-mic"><use href="#i-mic"/></svg>
+            <svg class="ic-l ic-x"><use href="#i-x"/></svg>
+          </button>
+
+          <div class="layer-sheet">
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grabber"></div>
+              <h3>New note</h3>
+              <button class="voice-card" type="button">
+                <span class="micb"><svg class="ic-l"><use href="#i-mic"/></svg></span>
+                <span><b>Voice note</b><small>Speak naturally. It's transcribed, tidied and given a lifespan.</small></span>
+                <svg class="ic go"><use href="#i-chev"/></svg>
+              </button>
+              <div class="opt-row">
+                <button class="opt" type="button"><svg class="ic"><use href="#i-text"/></svg>Text</button>
+                <button class="opt" type="button"><svg class="ic"><use href="#i-list"/></svg>Checklist</button>
+                <button class="opt" type="button"><svg class="ic"><use href="#i-image"/></svg>Photo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <b>Home</b>
+        <span>Every card wears its heartbeat. The life bar runs down from green to amber, dying notes say so out loud, dead ones grey out with a Revive action, and immortals carry the ink badge. Voice notes keep their audio and "Tidied" provenance.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 2 · NEW NOTE SHEET -->
+    <figure class="shot">
+      <div class="phone sheet-open" data-theme="light">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="sb-icons">
+              <svg width="17" height="12"><use href="#s-signal"/></svg>
+              <svg width="17" height="13"><use href="#s-wifi"/></svg>
+              <svg width="26" height="13"><use href="#s-batt"/></svg>
+            </div>
+          </div>
+          <div class="island"></div>
+          <div class="topbar">
+            <div class="wordmark">Noted<span class="dot">.</span></div>
+            <div class="searchpill"><svg class="ic-s"><use href="#i-search"/></svg><span>Search your notes</span></div>
+            <div class="avatar">M</div>
+          </div>
+          <div class="chips">
+            <div class="chip active">All</div>
+            <div class="chip"><svg class="ic-xs"><use href="#i-infinity"/></svg>Immortal</div>
+            <div class="chip"><svg class="ic-xs"><use href="#i-hourglass"/></svg>Dying</div>
+            <div class="chip"><svg class="ic-xs"><use href="#i-skull"/></svg>Dead</div>
+          </div>
+          <div class="grid"></div>
+
+          <button class="fab" type="button" aria-label="Close">
+            <svg class="ic-l ic-mic"><use href="#i-mic"/></svg>
+            <svg class="ic-l ic-x"><use href="#i-x"/></svg>
+          </button>
+
+          <div class="layer-sheet">
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grabber"></div>
+              <h3>New note</h3>
+              <button class="voice-card" type="button">
+                <span class="micb"><svg class="ic-l"><use href="#i-mic"/></svg></span>
+                <span><b>Voice note</b><small>Speak naturally. It's transcribed, tidied and given a lifespan.</small></span>
+                <svg class="ic go"><use href="#i-chev"/></svg>
+              </button>
+              <div class="opt-row">
+                <button class="opt" type="button"><svg class="ic"><use href="#i-text"/></svg>Text</button>
+                <button class="opt" type="button"><svg class="ic"><use href="#i-list"/></svg>Checklist</button>
+                <button class="opt" type="button"><svg class="ic"><use href="#i-image"/></svg>Photo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <b>New note sheet</b>
+        <span>One button, four ways in. Voice leads; text, checklist and photo follow. New notes are mortal by default, so the grid never silts up.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 3 · RECORDING -->
+    <figure class="shot">
+      <div class="phone capture" data-theme="light">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="sb-icons">
+              <svg width="17" height="12"><use href="#s-signal"/></svg>
+              <svg width="17" height="13"><use href="#s-wifi"/></svg>
+              <svg width="26" height="13"><use href="#s-batt"/></svg>
+            </div>
+          </div>
+          <div class="island"></div>
+
+          <div class="cap-top">
+            <button class="iconbtn" type="button" aria-label="Cancel"><svg class="ic-s"><use href="#i-x"/></svg></button>
+            <span class="lbl">Voice note</span>
+            <span style="width:42px"></span>
+          </div>
+
+          <div class="cap-mid">
+            <div class="timer">0:12</div>
+            <div class="cap-state"><span class="recdot"></span>Listening</div>
+            <div class="bigwave">
+              <span style="--h:.30;--i:0"></span><span style="--h:.52;--i:1"></span><span style="--h:.78;--i:2"></span><span style="--h:.44;--i:3"></span><span style="--h:.92;--i:4"></span><span style="--h:.62;--i:5"></span><span style="--h:1;--i:6"></span><span style="--h:.70;--i:7"></span><span style="--h:.40;--i:8"></span><span style="--h:.85;--i:9"></span><span style="--h:.56;--i:10"></span><span style="--h:.95;--i:11"></span><span style="--h:.48;--i:12"></span><span style="--h:.74;--i:13"></span><span style="--h:.34;--i:14"></span><span style="--h:.88;--i:15"></span><span style="--h:.60;--i:16"></span><span style="--h:.98;--i:17"></span><span style="--h:.42;--i:18"></span><span style="--h:.68;--i:19"></span><span style="--h:.50;--i:20"></span><span style="--h:.90;--i:21"></span><span style="--h:.36;--i:22"></span><span style="--h:.80;--i:23"></span><span style="--h:.58;--i:24"></span><span style="--h:.46;--i:25"></span>
+            </div>
+            <div class="cap-hint">Speak naturally. Pause for two seconds when you're done.</div>
+          </div>
+
+          <div class="live-card">
+            <div class="lbl"><svg class="ic-xs"><use href="#i-wave"/></svg>Live transcript</div>
+            <p>"...so call Dad about the fence quote before Friday. Best price so far is eighteen fifty, and ask if the gravel is"<span class="caret"></span></p>
+          </div>
+
+          <div class="cap-controls">
+            <button class="discard" type="button">Discard</button>
+            <button class="stopbtn" type="button" aria-label="Stop recording"><svg class="ic-l"><use href="#i-stop"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <b>Recording</b>
+        <span>A focused, ink-dark capture mode, like a viewfinder for audio. The transcript streams live, and a two-second pause can auto-stop so no tap is needed.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 4 · TRANSCRIBING -->
+    <figure class="shot">
+      <div class="phone" data-theme="light">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="sb-icons">
+              <svg width="17" height="12"><use href="#s-signal"/></svg>
+              <svg width="17" height="13"><use href="#s-wifi"/></svg>
+              <svg width="26" height="13"><use href="#s-batt"/></svg>
+            </div>
+          </div>
+          <div class="island"></div>
+
+          <div class="nav-row">
+            <button class="iconbtn" type="button" aria-label="Back"><svg class="ic-s"><use href="#i-x"/></svg></button>
+            <span class="ttl">New note</span>
+            <span class="savepill">Saving…</span>
+          </div>
+
+          <div class="steps">
+            <span class="step done"><svg class="ic-xs"><use href="#i-check"/></svg>Transcribed</span>
+            <span class="step active"><svg class="ic-xs"><use href="#i-sparkle"/></svg>Tidying up</span>
+            <span class="step">Formatting</span>
+          </div>
+
+          <div class="draft">
+            <div class="audio-chip">
+              <div class="pbtn"><svg class="ic-xs"><use href="#i-play"/></svg></div>
+              <div class="wv"><span style="--h:.5"></span><span style="--h:.8"></span><span style="--h:.6"></span><span style="--h:.95"></span><span style="--h:.55"></span><span style="--h:.9"></span><span style="--h:.45"></span><span style="--h:.75"></span><span style="--h:.85"></span><span style="--h:.5"></span><span style="--h:.7"></span><span style="--h:.65"></span></div>
+              <time>0:42</time>
+            </div>
+            <div class="sk sk-title"></div>
+            <div class="sk sk-line" style="width:92%"></div>
+            <div class="sk sk-line" style="width:84%"></div>
+            <div class="sk sk-line" style="width:47%; margin-bottom:14px"></div>
+            <div class="sk-task"><i class="sk"></i><div class="sk" style="width:62%"></div></div>
+            <div class="sk-task"><i class="sk"></i><div class="sk" style="width:54%"></div></div>
+            <div class="sk-task"><i class="sk"></i><div class="sk" style="width:58%"></div></div>
+            <span class="found"><svg class="ic-xs"><use href="#i-check"/></svg>3 to-dos found</span>
+          </div>
+
+          <p class="bg-hint">Finishes in the background, even if you leave or go offline. We'll ping you when the draft is ready.</p>
+        </div>
+      </div>
+      <figcaption>
+        <b>Transcribing</b>
+        <span>The LLM works in three passes: transcribe, tidy, format. Tasks get extracted along the way, and the note is born mortal with a default week of life.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 5 · REVIEW -->
+    <figure class="shot">
+      <div class="phone" data-theme="light">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="sb-icons">
+              <svg width="17" height="12"><use href="#s-signal"/></svg>
+              <svg width="17" height="13"><use href="#s-wifi"/></svg>
+              <svg width="26" height="13"><use href="#s-batt"/></svg>
+            </div>
+          </div>
+          <div class="island"></div>
+
+          <div class="nav-row">
+            <button class="iconbtn" type="button" aria-label="Back"><svg class="ic-s"><use href="#i-x"/></svg></button>
+            <span class="ttl">Edit note</span>
+            <button class="donepill" type="button">Done</button>
+          </div>
+
+          <div class="edit-scroll">
+            <div class="audio-card">
+              <button class="pbtn" type="button" aria-label="Play original audio"><svg class="ic-s"><use href="#i-play"/></svg></button>
+              <div class="meta"><b>Original audio</b><small>Recorded today 8:14 AM</small></div>
+              <div class="wv"><span style="--h:.4"></span><span style="--h:.75"></span><span style="--h:.55"></span><span style="--h:.95"></span><span style="--h:.6"></span><span style="--h:.85"></span><span style="--h:.45"></span><span style="--h:.7"></span><span style="--h:.95"></span><span style="--h:.5"></span><span style="--h:.8"></span><span style="--h:.65"></span></div>
+              <time>0:42</time>
+            </div>
+
+            <div class="ai-row">
+              <span class="badge"><svg class="ic-xs"><use href="#i-sparkle"/></svg>Tidied by AI</span>
+              <a href="#">Show original transcript</a>
+            </div>
+
+            <input class="edit-title" value="Fence quote" aria-label="Note title">
+
+            <p class="edit-body">Best so far: $1,850 from Rivera Fencing. Get the gravel answer before committing.</p>
+
+            <div class="tasks-card">
+              <div class="todo"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Call Dad about the quote</span></div>
+              <div class="todo"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Ask Rivera if gravel is included</span></div>
+              <div class="todo"><div class="cb"><svg class="ic-xs"><use href="#i-check"/></svg></div><span>Compare against last year's $2,100</span></div>
+            </div>
+
+            <div class="lifespan">
+              <div class="lp-label">Lifespan</div>
+              <div class="lp-opts">
+                <button class="lp" type="button">24h</button>
+                <button class="lp sel" type="button">1 week</button>
+                <button class="lp" type="button">1 month</button>
+                <button class="lp" type="button"><svg class="ic-xs"><use href="#i-infinity"/></svg>Immortal</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <button type="button" aria-label="Pin"><svg class="ic"><use href="#i-pin"/></svg></button>
+            <button type="button" aria-label="Color"><svg class="ic"><use href="#i-drop"/></svg></button>
+            <button type="button" aria-label="Share"><svg class="ic"><use href="#i-share"/></svg></button>
+            <button type="button" aria-label="Archive"><svg class="ic"><use href="#i-archive"/></svg></button>
+            <button type="button" aria-label="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <b>Review and edit</b>
+        <span>The draft arrives titled, with tasks extracted and the original audio attached. The lifespan picker sets its fate: 24 hours, a week, a month, or immortal. Pinning also grants immortality.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 6 · DARK HOME (cloned from screen 1 by script) -->
+    <figure class="shot">
+      <div class="phone" data-theme="dark">
+        <div class="screen" data-clone="home"></div>
+      </div>
+      <figcaption>
+        <b>Home, dark</b>
+        <span>Same grid, same heartbeat, only tokens flipped. Coral and the life colors brighten for contrast on ink. Use "Flip all themes" above to compare live.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 7 · EMPTY -->
+    <figure class="shot">
+      <div class="phone" data-theme="light">
+        <div class="screen">
+          <div class="statusbar">
+            <span>9:41</span>
+            <div class="sb-icons">
+              <svg width="17" height="12"><use href="#s-signal"/></svg>
+              <svg width="17" height="13"><use href="#s-wifi"/></svg>
+              <svg width="26" height="13"><use href="#s-batt"/></svg>
+            </div>
+          </div>
+          <div class="island"></div>
+
+          <div class="topbar">
+            <div class="wordmark">Noted<span class="dot">.</span></div>
+            <div class="searchpill"><svg class="ic-s"><use href="#i-search"/></svg><span>Search your notes</span></div>
+            <div class="avatar">M</div>
+          </div>
+
+          <div class="empty">
+            <div class="bigghost"><svg style="width:52px;height:52px"><use href="#i-ghost"/></svg></div>
+            <h2>Nothing alive in here yet.</h2>
+            <p>Tap the mic below and say it out loud. Every note gets a life. <b>Keep the good ones forever.</b></p>
+          </div>
+
+          <button class="fab" type="button" aria-label="New note">
+            <svg class="ic-l ic-mic"><use href="#i-mic"/></svg>
+            <svg class="ic-l ic-x"><use href="#i-x"/></svg>
+          </button>
+        </div>
+      </div>
+      <figcaption>
+        <b>First run</b>
+        <span>The empty state teaches the one gesture that matters, the mic, and the one rule of the house: mortal by default, immortal by choice.</span>
+      </figcaption>
+    </figure>
+
+  </main>
+
+  <footer class="board-foot">
+    <b>Color rules:</b> a 9-step warm gray scale gives every role its own step: background, sunken wells, cards, elevated sheets, hairlines, placeholder, metadata, secondary text, ink.
+    Dark mode lightens surfaces for depth (cards sit above the background, sheets above cards) and switches shadows off.
+    <b>Semantics stay out of the brand:</b> cobalt leads the interface, green means alive or success, amber means expiring, and red is reserved for recording-in-progress and errors, so red always demands attention.
+    <b>Try it:</b> the mic opens the creation sheet; "Flip all themes" toggles dark mode. Animations respect reduced-motion. Single self-contained HTML file; fonts from Google Fonts, photo from picsum.photos.
+  </footer>
+</div>
+
+<script>
+  // Dark Home frame clones the light Home markup so both themes stay in sync
+  var home = document.getElementById('homeScreen');
+  document.querySelectorAll('[data-clone]').forEach(function (slot) {
+    slot.innerHTML = home.innerHTML;
+  });
+
+  // Theme flip across all frames
+  document.getElementById('flip').addEventListener('click', function () {
+    var phones = document.querySelectorAll('.phone');
+    var next = phones[0].getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    phones.forEach(function (p) { p.setAttribute('data-theme', next); });
+  });
+
+  // FAB opens/closes the creation sheet (event delegation covers cloned frames)
+  document.addEventListener('click', function (e) {
+    var fab = e.target.closest('.fab');
+    if (fab) {
+      var screenEl = fab.closest('.screen');
+      screenEl.classList.toggle('sheet-open');
+      return;
+    }
+    if (e.target.closest('.scrim') || e.target.closest('.voice-card') || e.target.closest('.opt')) {
+      var phoneEl = e.target.closest('.screen');
+      if (phoneEl) phoneEl.classList.remove('sheet-open');
+    }
+  });
+</script>
+</body>
+</html>
