@@ -98,11 +98,20 @@ input, textarea { font: inherit; color: inherit; }
 .grid { flex: 1; overflow-y: auto; display: flex; gap: 11px; padding: 6px 16px 110px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .mcol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
 .note {
+  position: relative; /* anchor for swipe hints + funeral halo/ghost */
   background: var(--g-card); border-radius: 18px; cursor: pointer;
   border: 1.5px solid var(--line-strong); box-shadow: var(--shadow);
   padding: 12px 12px 9px; display: flex; flex-direction: column; gap: 7px;
   touch-action: pan-y; /* vertical scroll stays native; horizontal drags go to the gesture */
 }
+/* swipe intent hints */
+.swipe-hint {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: none; place-items: center; z-index: 2;
+}
+.note.swiping-left .swipe-hint.left { display: grid; left: 10px; background: var(--g-ink); color: var(--g-bg); }
+.note.swiping-right .swipe-hint.right { display: grid; right: 10px; background: var(--accent); color: var(--accent-ink); border: 1.5px solid var(--line-strong); }
 .note.tinted { background: var(--tint); }
 .note.dead { background: var(--ghosted); border-color: var(--g-hairline); box-shadow: none; }
 .note.dead .note-title, .note.dead .note-body { color: var(--ghost-ink); }

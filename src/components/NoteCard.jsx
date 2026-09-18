@@ -23,34 +23,43 @@ export default function NoteCard({ note, onOpen, onRequestDelete, dying = false 
   // Commits the instant the threshold is crossed (no reliance on end events),
   // and the release branch only ever springs the card back.
   const consumed = useRef(false);
-  const bind = useDrag(({ down, movement: [mx], velocity: [vx], direction: [dx] }) => {
+  const bind = useDrag(({ down, first, movement: [mx], velocity: [vx], direction: [dx] }) => {
     const el = cardRef.current;
     if (!el) return;
-    if (down && Math.abs(mx) < 3) { consumed.current = false; dragged.current = false; }
+    if (first) { consumed.current = false; dragged.current = false; }
     if (down && Math.abs(mx) > 7) dragged.current = true;
     if (down) {
       if (consumed.current) return; // action already fired for this gesture
       el.style.transition = "none";
       el.style.transform = `translateX(${mx}px)`;
-      el.style.backgroundColor =
-        mx < -12 ? (dead ? "var(--good-tint)" : "var(--accent-soft)")
-        : mx > 12 ? "var(--g-sunken)" : "";
+      el.style.backgroundColor = mx < -12 ? (dead ? "var(--good-tint)" : "var(--accent-soft)") : mx > 12 ? "var(--g-sunken)" : "";
+      el.classList.toggle("swiping-left", mx < -12);
+      el.classList.toggle("swiping-right", mx > 12);
       const left = mx < -72 || (vx < -0.9 && dx < 0 && mx < 20);
       const right = mx > 72 || (vx > 0.9 && dx > 0 && mx > -20);
       if (left || right) {
         consumed.current = true;
         try { navigator.vibrate?.(12); } catch { /* unsupported */ }
+        el.classList.remove("swiping-left", "swiping-right");
         el.style.transition = "transform .22s cubic-bezier(.2,.9,.3,1), opacity .22s ease, background-color .22s ease";
         el.style.transform = `translateX(${left ? -420 : 420}px)`;
         el.style.opacity = "0.25";
         if (left) dead ? reviveNote(note.id) : updateNote(note.id, { status: "dead" });
         else togglePin(note.id);
+        // guaranteed cleanup: never rely on the pointer's end events to restore
+        // the card; it re-enters view with its new life state.
+        setTimeout(() => {
+          el.style.transition = "transform .2s ease, opacity .2s ease";
+          el.style.transform = "";
+          el.style.opacity = "";
+          el.style.backgroundColor = "";
+        }, 260);
       }
     } else {
-      // release or cancel: spring back (a committed note re-renders from the DB anyway)
-      el.style.transition = "transform .24s cubic-bezier(.2,.9,.3,1), opacity .2s ease, background-color .24s ease";
+      el.classList.remove("swiping-left", "swiping-right");
+      if (consumed.current) return; // fly-off owns the visuals; cleanup restores
+      el.style.transition = "transform .24s cubic-bezier(.2,.9,.3,1), background-color .24s ease";
       el.style.transform = "";
-      el.style.opacity = "";
       el.style.backgroundColor = "";
     }
   }, { axis: "x", filterTaps: true });
@@ -63,6 +72,8 @@ export default function NoteCard({ note, onOpen, onRequestDelete, dying = false 
       onClick={() => { if (dragged.current) { dragged.current = false; return; } onOpen(); }}
     >
       {dying && <span className="rising-ghost"><Icon name="ghost" size={40} /></span>}
+      <span className="swipe-hint left">{dead ? <Icon name="heart" size={16} /> : <Icon name="skull" size={16} />}</span>
+      <span className="swipe-hint right"><Icon name="pin" size={16} /></span>
       {note.type === "voice" && (
         <span className="audio-chip" onClick={(e) => e.stopPropagation()}>
           <span className="pbtn"><Icon name={note.audio ? "play" : "wave"} size={13} /></span>

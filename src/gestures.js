@@ -8,10 +8,10 @@ import { useDrag } from "@use-gesture/react";
 export function useDragDismiss(onClose) {
   const ref = useRef(null);
   const consumed = useRef(false);
-  const bind = useDrag(({ down, movement: [, my], velocity: [, vy], direction: [, dy] }) => {
+  const bind = useDrag(({ down, first, movement: [, my], velocity: [, vy], direction: [, dy] }) => {
     const el = ref.current;
     if (!el) return;
-    if (down && Math.abs(my) < 3) consumed.current = false;
+    if (first) consumed.current = false;
     if (down) {
       if (consumed.current) return;
       const target = my > 0 ? my : my * 0.18;
@@ -26,7 +26,7 @@ export function useDragDismiss(onClose) {
         el.style.opacity = "0";
         setTimeout(onClose, 210);
       }
-    } else {
+    } else if (!consumed.current) {
       el.style.transition = "transform .28s cubic-bezier(.2,.9,.3,1), opacity .22s ease";
       el.style.transform = "translateY(0)";
       el.style.opacity = "1";
