@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { toWav } from "../audio";
-import { transcribe, tidy, classify, formatList, formatProse, formatHybrid, getLang } from "../cohere";
+import { transcribe, tidy, structure, getLang } from "../cohere";
 import { createNote } from "../db";
 import { Icon } from "./Icons.jsx";
 
 const STEPS = ["Converting", "Transcribing", "Structuring"];
-const CONF_GATE = 0.5;
 
 export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
   const [step, setStep] = useState(0);
@@ -25,24 +24,17 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
         if (!transcript) throw new Error("The transcript came back empty. Try speaking a bit louder.");
         setStep(2);
 
-        // JEV routes the note to the right formatter (docs/jev-plan.md).
-        // Low confidence or any JEV failure falls back to the combined prompt.
-        const route = await classify(transcript, "voice");
-        if (route && route.noteKind === "not_a_note" && route.confidence >= CONF_GATE) {
+        // DeepSeek structures the note in one call: intent + title/body/tasks.
+        // Any failure falls back to the Cohere combined prompt.
+        const s = await structure(transcript, "voice");
+        if (s && s.intent === "not_a_note") {
           setJunk(true);
           return; // filler transcript — nothing worth keeping, no note created
         }
         let tidied;
         try {
-          if (route && route.confidence >= CONF_GATE) {
-            const lang = route.language || getLang();
-            tidied =
-              route.noteKind === "task_list" ? await formatList(transcript, lang) :
-              route.noteKind === "pure_note" ? await formatProse(transcript, lang) :
-              await formatHybrid(transcript, lang);
-          } else {
-            tidied = await tidy(transcript);
-          }
+          tidied = s ? { title: s.title, body: s.body, tasks: s.tasks } : await tidy(transcript);
+          if (!tidied.body.trim() && !tidied.tasks.length) tidied.body = transcript;
         } catch {
           tidied = { title: "", body: transcript, tasks: [] }; // formatting is a bonus; raw transcript still saves
         }

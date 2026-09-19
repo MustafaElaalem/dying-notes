@@ -1,57 +1,26 @@
 // dying-notes API proxy (Cloudflare Worker, zero dependencies).
 // Keeps the Cohere key server-side, locks calls to the PWA's origin,
-// rate-limits, and routes note intent via TypeSafe JEV (/classify).
+// rate-limits, and structures notes via OpenRouter DeepSeek (/structure).
 
 const COHERE = "https://api.cohere.com";
-const TYPESAFE = "https://api.typesafe.ai/v1/systemone";
+const OPENROUTER = "https://openrouter.ai/api/v1/chat/completions";
+const DEEPSEEK = "deepseek/deepseek-v4.1-flash";
 const TIDY_MODEL = "command-r7b-arabic-02-2025";
 const RATE_LIMIT = 60;        // requests...
 const RATE_WINDOW = 5 * 60;   // ...per 5 minutes per IP (isolate-memory, best effort)
 
-const buckets = new Map();
+// One general-purpose call classifies intent AND writes the note.
+// Mixed intent (prose + tasks) is first-class; language of every output
+// string must match the transcript.
+const STRUCTURE_PROMPT = `You structure voice-note transcripts and must honor the speaker's intent. Reply with ONLY JSON, no markdown fences. EVERY string (title, body, each task) MUST be in the transcript's language. Keys: {"intent": "task" | "mixed" | "note" | "not_a_note", "title": string (max 6 words, "" if nothing fits), "body": string (the prose cleaned up: fix filler words, punctuation, spacing; "" if it was purely a task list), "tasks": string[] (short imperative phrases)}.
+Rules:
+- intent "task": essentially items to do (errands, reminders, lists, "I need to...", Arabic equivalents like "خاصني ندير", "أريد إنشاء مهام"). tasks filled, body "".
+- intent "mixed": meaningful prose AND explicit to-do items. body keeps the prose WITHOUT the to-do items, tasks extracts them.
+- intent "note": a thought, memory, or information with no to-do intent. tasks MUST be []. Never invent tasks that the speaker did not explicitly commit to doing.
+- intent "not_a_note": filler words only, empty, or too little content to keep. Everything empty.
+Transcript:`;
 
-// JEV question set: three independent judgments over one transcript, per docs/jev-plan.md
-const JEV_QUESTIONS = {
-  note_kind: {
-    type: "choice",
-    instructions: "What kind of note does the speaker intend? This routes the note to its formatting handler.",
-    criteria: {
-      task_list: {
-        what: "Essentially items to do: errands, reminders, todos, shopping lists",
-        not_for: "Prose narration that merely mentions actions in passing",
-        examples: ["خاصني نشري الخبز و الحليب و نعيط على بابا", "remind me to call the dentist"]
-      },
-      note_with_tasks: {
-        what: "Meaningful prose (memory, observation, info) plus at least one explicit item to do",
-        not_for: "Pure lists; pure narration without any to-do",
-        examples: ["الحديقة زوينة، الدخلة عشرين درهم، و خاصني نشري الخبز قبل الجمعة"]
-      },
-      pure_note: {
-        what: "A thought, memory, or information with no to-do intent",
-        not_for: "Anything containing explicit items to do",
-        examples: ["wifi password is solstice2024", "التذكرة كانت عشرين درهم للشخص"]
-      },
-      not_a_note: {
-        what: "Filler words only, empty, or too little content to be worth keeping",
-        not_for: "Short but meaningful notes",
-        examples: ["اه اه يعني"]
-      }
-    }
-  },
-  language: {
-    type: "choice",
-    instructions: "The dominant language the note should be written in.",
-    criteria: {
-      ar: "Arabic (any dialect)",
-      en: "English",
-      mixed: "Genuinely code-switched; both languages carry meaning"
-    }
-  },
-  has_deadline: {
-    type: "noul",
-    instructions: "The utterance states an explicit date, day, or time by which something must happen (e.g. 'before Friday', 'غدا', 'tomorrow at 9')."
-  }
-};
+const buckets = new Map();
 
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
@@ -135,23 +104,26 @@ export default {
       return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });
     }
 
-    if (url.pathname === "/classify" && request.method === "POST") {
+    if (url.pathname === "/structure" && request.method === "POST") {
       const body = await request.json().catch(() => null);
       if (!body || typeof body.transcript !== "string" || !body.transcript.trim()) {
         return json({ error: "invalid body" }, 400, cors);
       }
-      const r = await fetchT(TYPESAFE, {
+      const r = await fetchT(OPENROUTER, {
         method: "POST",
-        headers: { Authorization: `Bearer ${env.JEV_KEY}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${env.OPENROUTER_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://mustafaelaalem.github.io/dying-notes",
+          "X-Title": "dying-notes"
+        },
         body: JSON.stringify({
-          model: "jev-latest",
-          state: {
-            transcript: body.transcript.slice(0, 4000),
-            input_mode: body.input_mode === "typed" ? "typed" : "voice"
-          },
-          questions: JEV_QUESTIONS
+          model: DEEPSEEK,
+          temperature: 0.2,
+          max_tokens: 1000,
+          messages: [{ role: "user", content: STRUCTURE_PROMPT + "\n" + body.transcript.slice(0, 6000) }]
         })
-      }, 15_000);
+      }, 45_000);
       return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });
     }
 

@@ -15,7 +15,7 @@ export const setLang = (l) => localStorage.setItem(LANG_STORAGE, l);
 
 // All AI calls carry hard deadlines — a stalled connection becomes a retryable
 // error instead of an eternal spinner.
-const TIMEOUTS = { classify: 15_000, tidy: 60_000, transcribe: 120_000 };
+const TIMEOUTS = { structure: 50_000, tidy: 60_000, transcribe: 120_000 };
 
 async function fetchT(url, opts, ms) {
   try {
@@ -70,56 +70,34 @@ export async function tidy(transcript) {
   return parseTidy(text, transcript);
 }
 
-// ---- JEV intent routing (docs/jev-plan.md) ----
-// The Worker classifies the transcript (note_kind + language + has_deadline).
-// Returns null on any failure — callers fall back to the combined prompt above.
+// ---- Note structuring (OpenRouter DeepSeek via the Worker) ----
+// One call classifies intent AND writes the note: task | mixed | note | not_a_note.
+// Returns null on any failure — callers fall back to the Cohere combined prompt.
 
-export async function classify(transcript, inputMode = "voice") {
+export async function structure(transcript, inputMode = "voice") {
   try {
-    const res = await fetchT(`${WORKER}/classify`, {
+    const res = await fetchT(`${WORKER}/structure`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ transcript, input_mode: inputMode })
-    }, TIMEOUTS.classify);
+    }, TIMEOUTS.structure);
     if (!res.ok) return null;
     const j = await res.json();
-    const a = j.answers || {};
+    const content = (j.choices?.[0]?.message?.content || "").trim();
+    const m = content.match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    const o = JSON.parse(m[0]);
+    const tasks = Array.isArray(o.tasks)
+      ? o.tasks.filter((t) => typeof t === "string" && t.trim()).map((t) => ({ text: t.trim(), done: false }))
+      : [];
     return {
-      noteKind: a.note_kind?.choice || null,
-      confidence: a.note_kind?.confidence ?? 0,
-      probabilities: a.note_kind?.probabilities || {},
-      language: a.language?.choice || null,
-      hasDeadline: a.has_deadline?.noul ?? null
+      intent: o.intent === "task" || o.intent === "mixed" || o.intent === "note" || o.intent === "not_a_note" ? o.intent : null,
+      title: typeof o.title === "string" ? o.title : "",
+      body: typeof o.body === "string" ? o.body : "",
+      tasks
     };
   } catch { return null; }
 }
-
-const LANG_LINE = (lang) =>
-  lang === "mixed" ? "Arabic-English code-switched is fine; keep each phrase in its own language."
-  : lang === "en" ? "English."
-  : "Arabic.";
-
-const LIST_PROMPT = (lang) => `The speaker intended a to-do list. Extract every item to do as a short imperative phrase. Reply with ONLY JSON: {"title": string (max 6 words), "tasks": string[]}. Write everything in ${LANG_LINE(lang)} Transcript:`;
-
-const PROSE_PROMPT = (lang) => `The speaker is recording a thought or information — NOT a to-do list. Clean it up (filler words, punctuation, spacing) and keep their meaning. Reply with ONLY JSON: {"title": string (max 6 words), "body": string}. Do NOT output any tasks. Write everything in ${LANG_LINE(lang)} Transcript:`;
-
-const HYBRID_PROMPT = (lang) => `The speaker recorded meaningful prose that also contains explicit to-do items. Reply with ONLY JSON: {"title": string (max 6 words), "body": string (the prose, cleaned up — do NOT put the to-do items in the body), "tasks": string[] (each explicit item as a short imperative phrase)}. Write everything in ${LANG_LINE(lang)} Transcript:`;
-
-async function formatWith(prompt, transcript) {
-  const res = await fetchT(`${WORKER}/tidy`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  }, TIMEOUTS.tidy);
-  if (!res.ok) throw await cohereError(res);
-  const j = await res.json();
-  const text = (j.message?.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
-  return parseTidy(text, transcript, { allowEmptyBody: true });
-}
-
-export const formatList = (transcript, lang) => formatWith(LIST_PROMPT(lang), transcript);
-export const formatProse = (transcript, lang) => formatWith(PROSE_PROMPT(lang), transcript);
-export const formatHybrid = (transcript, lang) => formatWith(HYBRID_PROMPT(lang), transcript);
 
 function parseTidy(text, fallback, { allowEmptyBody = false } = {}) {
   try {

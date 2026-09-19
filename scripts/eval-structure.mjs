@@ -1,10 +1,9 @@
-// Golden-set evaluation for JEV note routing (docs/jev-plan.md).
+// Golden-set evaluation for note structuring (docs/jev-plan.md).
 // Usage: node scripts/eval-jev.mjs [workerUrl]   (default: the deployed worker)
 // Grades note_kind routing against 40 hand-labeled utterances (10 per class),
 // and reports language-detection accuracy on the non-filler cases.
 
 const WORKER = (process.argv[2] || "https://dying-notes-api.mostafa-elaalem.workers.dev").replace(/\/+$/, "");
-const CONF_GATE = 0.5;
 
 // [expected_kind, transcript, expected_language_or_null]
 const GOLDEN = [
@@ -54,42 +53,42 @@ const GOLDEN = [
   ["not_a_note", "la la la", null]
 ];
 
-async function classify(transcript, tries = 3) {
-  for (let i = 0; i < tries; i++) {
+const MAP = { task_list: "task", note_with_tasks: "mixed", pure_note: "note", not_a_note: "not_a_note" };
+
+async function structure(transcript, tries = 3) {
+  for (let i = 0; i < 4; i++) {
     try {
-      const res = await fetch(`${WORKER}/classify`, {
+      const res = await fetch(`${WORKER}/structure`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Origin: "https://mustafaelaalem.github.io" },
         body: JSON.stringify({ transcript, input_mode: "voice" }),
-        signal: AbortSignal.timeout(30_000)
+        signal: AbortSignal.timeout(70_000)
       });
       if (!res.ok) return { error: `HTTP ${res.status}` };
-      return await res.json();
+      const j = await res.json();
+      const m = (j.choices?.[0]?.message?.content || "").match(/\{[\s\S]*\}/);
+      if (!m) return { error: "no JSON in model output" };
+      return JSON.parse(m[0]);
     } catch (e) {
       if (i === tries - 1) return { error: String(e.message || e).slice(0, 80) };
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 2500));
     }
   }
 }
 
 const rows = [];
-let kindCorrect = 0, langScored = 0, langCorrect = 0, gatedWouldFallback = 0, apiErrors = 0;
+let kindCorrect = 0, apiErrors = 0, inventedTasks = 0, missingTasks = 0;
 
-for (const [expected, transcript, expectedLang] of GOLDEN) {
-  const j = await classify(transcript);
+for (const [expected, transcript] of GOLDEN) {
+  const j = await structure(transcript);
   if (j.error) { apiErrors++; rows.push({ expected, transcript: transcript.slice(0, 40), error: j.error }); continue; }
-  const kind = j.answers.note_kind;
-  const got = kind.choice;
-  const conf = kind.confidence;
-  const routed = conf >= CONF_GATE ? got : "FALLBACK";
-  const ok = got === expected;
+  const got = j.intent;
+  const ok = got === MAP[expected];
   if (ok) kindCorrect++;
-  if (expectedLang) {
-    langScored++;
-    if (j.answers.language.choice === expectedLang) langCorrect++;
-  }
-  if (!ok && routed !== expected) gatedWouldFallback++;
-  rows.push({ expected, got, conf: conf.toFixed(2), routed, ok, lang: j.answers.language.choice, transcript: transcript.slice(0, 38) });
+  const tasks = Array.isArray(j.tasks) ? j.tasks : [];
+  if (expected === "pure_note" && tasks.length > 0) inventedTasks++;
+  if ((expected === "task_list" || expected === "note_with_tasks") && tasks.length === 0) missingTasks++;
+  rows.push({ expected, got, tasks: tasks.length, ok, transcript: transcript.slice(0, 38) });
 }
 
 console.log("\n===== per-case =====");
@@ -103,7 +102,7 @@ for (const r of rows) {
 
 const total = GOLDEN.length;
 console.log("\n===== summary =====");
-console.log(`kind accuracy:        ${kindCorrect}/${total} = ${(kindCorrect / total * 100).toFixed(1)}%`);
-console.log(`language accuracy:    ${langCorrect}/${langScored} = ${(langCorrect / langScored * 100).toFixed(1)}% (non-filler)`);
+console.log(`intent accuracy:      ${kindCorrect}/${total} = ${(kindCorrect / total * 100).toFixed(1)}%`);
+console.log(`invented tasks (on pure notes): ${inventedTasks}   <-- the bug the user reported`);
+console.log(`missing tasks (on task notes):  ${missingTasks}`);
 console.log(`api errors:           ${apiErrors}`);
-console.log(`gate (${CONF_GATE}): would-fallback count above is per-case "routed" column`);
