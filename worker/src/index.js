@@ -1,13 +1,57 @@
 // dying-notes API proxy (Cloudflare Worker, zero dependencies).
 // Keeps the Cohere key server-side, locks calls to the PWA's origin,
-// and is the future seam for JEV intent routing (/classify).
+// rate-limits, and routes note intent via TypeSafe JEV (/classify).
 
 const COHERE = "https://api.cohere.com";
+const TYPESAFE = "https://api.typesafe.ai/v1/systemone";
 const TIDY_MODEL = "command-r7b-arabic-02-2025";
-const RATE_LIMIT = 30;        // requests...
+const RATE_LIMIT = 60;        // requests...
 const RATE_WINDOW = 5 * 60;   // ...per 5 minutes per IP (isolate-memory, best effort)
 
 const buckets = new Map();
+
+// JEV question set: three independent judgments over one transcript, per docs/jev-plan.md
+const JEV_QUESTIONS = {
+  note_kind: {
+    type: "choice",
+    instructions: "What kind of note does the speaker intend? This routes the note to its formatting handler.",
+    criteria: {
+      task_list: {
+        what: "Essentially items to do: errands, reminders, todos, shopping lists",
+        not_for: "Prose narration that merely mentions actions in passing",
+        examples: ["خاصني نشري الخبز و الحليب و نعيط على بابا", "remind me to call the dentist"]
+      },
+      note_with_tasks: {
+        what: "Meaningful prose (memory, observation, info) plus at least one explicit item to do",
+        not_for: "Pure lists; pure narration without any to-do",
+        examples: ["الحديقة زوينة، الدخلة عشرين درهم، و خاصني نشري الخبز قبل الجمعة"]
+      },
+      pure_note: {
+        what: "A thought, memory, or information with no to-do intent",
+        not_for: "Anything containing explicit items to do",
+        examples: ["wifi password is solstice2024", "التذكرة كانت عشرين درهم للشخص"]
+      },
+      not_a_note: {
+        what: "Filler words only, empty, or too little content to be worth keeping",
+        not_for: "Short but meaningful notes",
+        examples: ["اه اه يعني"]
+      }
+    }
+  },
+  language: {
+    type: "choice",
+    instructions: "The dominant language the note should be written in.",
+    criteria: {
+      ar: "Arabic (any dialect)",
+      en: "English",
+      mixed: "Genuinely code-switched; both languages carry meaning"
+    }
+  },
+  has_deadline: {
+    type: "noul",
+    instructions: "The utterance states an explicit date, day, or time by which something must happen (e.g. 'before Friday', 'غدا', 'tomorrow at 9')."
+  }
+};
 
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
@@ -80,6 +124,26 @@ export default {
           temperature: 0.2,
           max_tokens: 800,
           messages: [{ role: "user", content: body.prompt }]
+        })
+      });
+      return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });
+    }
+
+    if (url.pathname === "/classify" && request.method === "POST") {
+      const body = await request.json().catch(() => null);
+      if (!body || typeof body.transcript !== "string" || !body.transcript.trim()) {
+        return json({ error: "invalid body" }, 400, cors);
+      }
+      const r = await fetch(TYPESAFE, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${env.JEV_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "jev-latest",
+          state: {
+            transcript: body.transcript.slice(0, 4000),
+            input_mode: body.input_mode === "typed" ? "typed" : "voice"
+          },
+          questions: JEV_QUESTIONS
         })
       });
       return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });

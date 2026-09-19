@@ -55,7 +55,58 @@ export async function tidy(transcript) {
   return parseTidy(text, transcript);
 }
 
-function parseTidy(text, fallbackTranscript) {
+// ---- JEV intent routing (docs/jev-plan.md) ----
+// The Worker classifies the transcript (note_kind + language + has_deadline).
+// Returns null on any failure — callers fall back to the combined prompt above.
+
+export async function classify(transcript, inputMode = "voice") {
+  try {
+    const res = await fetch(`${WORKER}/classify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript, input_mode: inputMode })
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    const a = j.answers || {};
+    return {
+      noteKind: a.note_kind?.choice || null,
+      confidence: a.note_kind?.confidence ?? 0,
+      probabilities: a.note_kind?.probabilities || {},
+      language: a.language?.choice || null,
+      hasDeadline: a.has_deadline?.noul ?? null
+    };
+  } catch { return null; }
+}
+
+const LANG_LINE = (lang) =>
+  lang === "mixed" ? "Arabic-English code-switched is fine; keep each phrase in its own language."
+  : lang === "en" ? "English."
+  : "Arabic.";
+
+const LIST_PROMPT = (lang) => `The speaker intended a to-do list. Extract every item to do as a short imperative phrase. Reply with ONLY JSON: {"title": string (max 6 words), "tasks": string[]}. Write everything in ${LANG_LINE(lang)} Transcript:`;
+
+const PROSE_PROMPT = (lang) => `The speaker is recording a thought or information — NOT a to-do list. Clean it up (filler words, punctuation, spacing) and keep their meaning. Reply with ONLY JSON: {"title": string (max 6 words), "body": string}. Do NOT output any tasks. Write everything in ${LANG_LINE(lang)} Transcript:`;
+
+const HYBRID_PROMPT = (lang) => `The speaker recorded meaningful prose that also contains explicit to-do items. Reply with ONLY JSON: {"title": string (max 6 words), "body": string (the prose, cleaned up — do NOT put the to-do items in the body), "tasks": string[] (each explicit item as a short imperative phrase)}. Write everything in ${LANG_LINE(lang)} Transcript:`;
+
+async function formatWith(prompt, transcript) {
+  const res = await fetch(`${WORKER}/tidy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+  if (!res.ok) throw await cohereError(res);
+  const j = await res.json();
+  const text = (j.message?.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
+  return parseTidy(text, transcript, { allowEmptyBody: true });
+}
+
+export const formatList = (transcript, lang) => formatWith(LIST_PROMPT(lang), transcript);
+export const formatProse = (transcript, lang) => formatWith(PROSE_PROMPT(lang), transcript);
+export const formatHybrid = (transcript, lang) => formatWith(HYBRID_PROMPT(lang), transcript);
+
+function parseTidy(text, fallback, { allowEmptyBody = false } = {}) {
   try {
     const m = text.match(/\{[\s\S]*\}/);
     if (m) {
@@ -64,12 +115,13 @@ function parseTidy(text, fallbackTranscript) {
       const tasks = (o.intent === "note" || !Array.isArray(o.tasks))
         ? []
         : o.tasks.filter((t) => typeof t === "string" && t.trim()).map((t) => ({ text: t.trim(), done: false }));
+      const body = typeof o.body === "string" && o.body.trim() ? o.body : (allowEmptyBody ? "" : fallback);
       return {
         title: typeof o.title === "string" ? o.title : "",
-        body: typeof o.body === "string" && o.body.trim() ? o.body : fallbackTranscript,
+        body,
         tasks
       };
     }
   } catch { /* fall through */ }
-  return { title: "", body: fallbackTranscript, tasks: [] };
+  return { title: "", body: fallback, tasks: [] };
 }

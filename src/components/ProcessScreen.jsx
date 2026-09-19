@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { toWav } from "../audio";
-import { transcribe, tidy, getLang } from "../cohere";
+import { transcribe, tidy, classify, formatList, formatProse, formatHybrid, getLang } from "../cohere";
 import { createNote } from "../db";
 import { Icon } from "./Icons.jsx";
 
-const STEPS = ["Converting", "Transcribing", "Tidying up"];
+const STEPS = ["Converting", "Transcribing", "Structuring"];
+const CONF_GATE = 0.5;
 
 export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
+  const [junk, setJunk] = useState(false);
   const started = useRef(false);
 
   useEffect(() => {
@@ -22,11 +24,27 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
         const transcript = await transcribe(wav, getLang());
         if (!transcript) throw new Error("The transcript came back empty. Try speaking a bit louder.");
         setStep(2);
+
+        // JEV routes the note to the right formatter (docs/jev-plan.md).
+        // Low confidence or any JEV failure falls back to the combined prompt.
+        const route = await classify(transcript, "voice");
+        if (route && route.noteKind === "not_a_note" && route.confidence >= CONF_GATE) {
+          setJunk(true);
+          return; // filler transcript — nothing worth keeping, no note created
+        }
         let tidied;
         try {
-          tidied = await tidy(transcript);
+          if (route && route.confidence >= CONF_GATE) {
+            const lang = route.language || getLang();
+            tidied =
+              route.noteKind === "task_list" ? await formatList(transcript, lang) :
+              route.noteKind === "pure_note" ? await formatProse(transcript, lang) :
+              await formatHybrid(transcript, lang);
+          } else {
+            tidied = await tidy(transcript);
+          }
         } catch {
-          tidied = { title: "", body: transcript, tasks: [] }; // tidy is a bonus; raw transcript still saves
+          tidied = { title: "", body: transcript, tasks: [] }; // formatting is a bonus; raw transcript still saves
         }
         const id = await createNote({
           // intent-driven type: a task-intent utterance becomes a checklist note
@@ -47,6 +65,26 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (junk) {
+    return (
+      <div className="screen">
+        <div className="nav-row">
+          <button className="iconbtn" onClick={onCancel} aria-label="Back"><Icon name="x" size={16} /></button>
+          <span className="ttl">New note</span>
+          <span style={{ width: 42 }} />
+        </div>
+        <div className="proc-error">
+          <div className="bigghost"><Icon name="ghost" size={44} /></div>
+          <h2>Nothing to keep here.</h2>
+          <p>That was filler, not a note — the reaper moved along without collecting anything.</p>
+          <div className="err-actions">
+            <button className="donepill" onClick={onCancel}>Back home</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
