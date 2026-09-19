@@ -68,6 +68,12 @@ function corsHeaders(request, env) {
 const json = (obj, status = 200, extra = {}) =>
   new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...extra } });
 
+// Outbound AI calls get hard deadlines; a stalled upstream becomes a 504 the
+// client can retry instead of an eternal wait.
+async function fetchT(url, opts, ms) {
+  return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+}
+
 function rateLimited(request) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   const now = Date.now() / 1000;
@@ -103,11 +109,11 @@ export default {
       out.append("model", model);
       out.append("language", language);
       out.append("file", file, "note.wav");
-      const r = await fetch(`${COHERE}/v1/audio/transcriptions`, {
+      const r = await fetchT(`${COHERE}/v1/audio/transcriptions`, {
         method: "POST",
         headers: { Authorization: `Bearer ${env.COHERE_KEY}` },
         body: out
-      });
+      }, 100_000);
       return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });
     }
 
@@ -116,7 +122,7 @@ export default {
       if (!body || typeof body.prompt !== "string" || body.prompt.length > 20_000) {
         return json({ error: "invalid body" }, 400, cors);
       }
-      const r = await fetch(`${COHERE}/v2/chat`, {
+      const r = await fetchT(`${COHERE}/v2/chat`, {
         method: "POST",
         headers: { Authorization: `Bearer ${env.COHERE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -125,7 +131,7 @@ export default {
           max_tokens: 800,
           messages: [{ role: "user", content: body.prompt }]
         })
-      });
+      }, 60_000);
       return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });
     }
 
@@ -134,7 +140,7 @@ export default {
       if (!body || typeof body.transcript !== "string" || !body.transcript.trim()) {
         return json({ error: "invalid body" }, 400, cors);
       }
-      const r = await fetch(TYPESAFE, {
+      const r = await fetchT(TYPESAFE, {
         method: "POST",
         headers: { Authorization: `Bearer ${env.JEV_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -145,7 +151,7 @@ export default {
           },
           questions: JEV_QUESTIONS
         })
-      });
+      }, 15_000);
       return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", ...cors } });
     }
 

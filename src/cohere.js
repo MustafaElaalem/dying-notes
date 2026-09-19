@@ -13,6 +13,21 @@ export const getLang = () => localStorage.getItem(LANG_STORAGE) || "ar";
 export const setLang = (l) => localStorage.setItem(LANG_STORAGE, l);
 
 
+// All AI calls carry hard deadlines — a stalled connection becomes a retryable
+// error instead of an eternal spinner.
+const TIMEOUTS = { classify: 15_000, tidy: 60_000, transcribe: 120_000 };
+
+async function fetchT(url, opts, ms) {
+  try {
+    return await fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+  } catch (e) {
+    if (e.name === "TimeoutError" || /timeout|abort/i.test(String(e.message))) {
+      throw new Error("The AI service took too long to respond. Check your connection and try again.");
+    }
+    throw e;
+  }
+}
+
 async function cohereError(res) {
   let msg = `Cohere ${res.status}`;
   try {
@@ -30,7 +45,7 @@ export async function transcribe(audioBlob, lang = "ar") {
   fd.append("model", TRANSCRIBE_MODEL);
   fd.append("language", lang);
   fd.append("file", audioBlob, "note.wav");
-  const res = await fetch(`${WORKER}/transcribe`, { method: "POST", body: fd });
+  const res = await fetchT(`${WORKER}/transcribe`, { method: "POST", body: fd }, TIMEOUTS.transcribe);
   if (!res.ok) throw await cohereError(res);
   const j = await res.json();
   return (j.text || "").trim();
@@ -61,11 +76,11 @@ export async function tidy(transcript) {
 
 export async function classify(transcript, inputMode = "voice") {
   try {
-    const res = await fetch(`${WORKER}/classify`, {
+    const res = await fetchT(`${WORKER}/classify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ transcript, input_mode: inputMode })
-    });
+    }, TIMEOUTS.classify);
     if (!res.ok) return null;
     const j = await res.json();
     const a = j.answers || {};
@@ -91,11 +106,11 @@ const PROSE_PROMPT = (lang) => `The speaker is recording a thought or informatio
 const HYBRID_PROMPT = (lang) => `The speaker recorded meaningful prose that also contains explicit to-do items. Reply with ONLY JSON: {"title": string (max 6 words), "body": string (the prose, cleaned up — do NOT put the to-do items in the body), "tasks": string[] (each explicit item as a short imperative phrase)}. Write everything in ${LANG_LINE(lang)} Transcript:`;
 
 async function formatWith(prompt, transcript) {
-  const res = await fetch(`${WORKER}/tidy`, {
+  const res = await fetchT(`${WORKER}/tidy`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt })
-  });
+  }, TIMEOUTS.tidy);
   if (!res.ok) throw await cohereError(res);
   const j = await res.json();
   const text = (j.message?.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
