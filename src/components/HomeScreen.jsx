@@ -13,7 +13,7 @@ const FILTERS = [
   { id: "dead", label: "Dead", icon: "skull" }
 ];
 
-export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOpenNote, onOpenSettings }) {
+export default function HomeScreen({ avatarLetter = "M", onNewVoice, onNewText, onNewChecklist, onOpenNote, onOpenSettings }) {
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -73,7 +73,7 @@ export default function HomeScreen({ onNewVoice, onNewText, onNewChecklist, onOp
           <Icon name="search" size={16} />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search your notes" aria-label="Search your notes" />
         </label>
-        <button className="avatar" onClick={onOpenSettings} aria-label="Settings">M</button>
+            <button className="avatar" onClick={onOpenSettings} aria-label="Settings">{avatarLetter}</button>
       </div>
 
       <div className="chips" role="tablist" aria-label="Filters">

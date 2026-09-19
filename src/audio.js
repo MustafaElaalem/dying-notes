@@ -1,5 +1,9 @@
 // Audio pipeline: MediaRecorder capture -> 16kHz mono WAV (what Cohere accepts),
-// plus a live analyser feeding the waveform and 2s-silence auto-stop.
+// plus a live analyser feeding the waveform. Recording ends ONLY when the user
+// stops it — or when the hard cap is reached. No silence auto-stop: thinking
+// pauses are allowed.
+
+export const MAX_RECORD_SECONDS = 180; // 3 minutes per voice note
 
 export class Recorder {
   constructor() {
@@ -10,10 +14,8 @@ export class Recorder {
     this.analyser = null;
     this.raf = null;
     this.startedAt = 0;
-    this.lastLoudAt = 0;
     this.stopped = false;
     this.onLevel = null;   // (level 0..1) => void
-    this.onAutoStop = null; // () => void, fired after 2s of silence (min 3s recorded)
   }
 
   async start() {
@@ -31,7 +33,6 @@ export class Recorder {
     src.connect(this.analyser);
 
     this.startedAt = performance.now();
-    this.lastLoudAt = this.startedAt;
     this.stopped = false;
     this.recorder.start(250);
     this.#loop();
@@ -44,12 +45,6 @@ export class Recorder {
     let peak = 0;
     for (let i = 0; i < buf.length; i++) peak = Math.max(peak, Math.abs(buf[i] - 128) / 128);
     this.onLevel?.(Math.min(1, peak * 1.6));
-    const now = performance.now();
-    if (peak > 0.09) this.lastLoudAt = now;
-    if (now - this.lastLoudAt > 2000 && now - this.startedAt > 3000) {
-      this.onAutoStop?.();
-      return;
-    }
     this.raf = requestAnimationFrame(() => this.#loop());
   }
 

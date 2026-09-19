@@ -1,26 +1,17 @@
-// Cohere client. The API key lives in localStorage on this device only,
-// entered in Settings. It is never bundled or committed.
-const BASE = "https://api.cohere.com";
-const KEY_STORAGE = "noted.cohere.key";
+// Cohere client. All calls route through our Cloudflare Worker (dying-notes-api),
+// which holds the key server-side, origin-locks the PWA, and rate-limits.
+// There is no API key in this app, anywhere.
+const WORKER = "https://dying-notes-api.mostafa-elaalem.workers.dev";
 const LANG_STORAGE = "noted.lang";
-const WORKER_STORAGE = "noted.worker.url";
 
 // Arabic transcribe model: Arabic-first, handles English and code-switched
 // Arabic/English speech. The `language` hint (from Settings) still guides decoding.
 const TRANSCRIBE_MODEL = "cohere-transcribe-arabic-07-2026";
 const TIDY_MODEL = "command-r7b-arabic-02-2025"; // Arabic-first, strong English too
 
-export const getKey = () => localStorage.getItem(KEY_STORAGE) || "";
-export const setKey = (k) => localStorage.setItem(KEY_STORAGE, k.trim());
-export const hasKey = () => getKey().length > 10;
 export const getLang = () => localStorage.getItem(LANG_STORAGE) || "ar";
 export const setLang = (l) => localStorage.setItem(LANG_STORAGE, l);
 
-// Cloud endpoint: when set, all Cohere calls route through your Cloudflare
-// Worker, which holds the real key server-side. Falls back to the device key.
-export const getWorkerUrl = () => (localStorage.getItem(WORKER_STORAGE) || "").trim().replace(/\/+$/, "");
-export const setWorkerUrl = (u) => localStorage.setItem(WORKER_STORAGE, u.trim());
-export const hasCredentials = () => getWorkerUrl().length > 8 || hasKey();
 
 async function cohereError(res) {
   let msg = `Cohere ${res.status}`;
@@ -39,14 +30,7 @@ export async function transcribe(audioBlob, lang = "ar") {
   fd.append("model", TRANSCRIBE_MODEL);
   fd.append("language", lang);
   fd.append("file", audioBlob, "note.wav");
-  const base = getWorkerUrl();
-  const res = base
-    ? await fetch(`${base}/transcribe`, { method: "POST", body: fd })
-    : await fetch(`${BASE}/v1/audio/transcriptions`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getKey()}` },
-        body: fd
-      });
+  const res = await fetch(`${WORKER}/transcribe`, { method: "POST", body: fd });
   if (!res.ok) throw await cohereError(res);
   const j = await res.json();
   return (j.text || "").trim();
@@ -60,24 +44,11 @@ Intent rules:
 Transcript:`;
 
 export async function tidy(transcript) {
-  const prompt = `${TIDY_PROMPT}\n${transcript}`;
-  const base = getWorkerUrl();
-  const res = base
-    ? await fetch(`${base}/tidy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      })
-    : await fetch(`${BASE}/v2/chat`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getKey()}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: TIDY_MODEL,
-          temperature: 0.3,
-          max_tokens: 800,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
+  const res = await fetch(`${WORKER}/tidy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: `${TIDY_PROMPT}\n${transcript}` })
+  });
   if (!res.ok) throw await cohereError(res);
   const j = await res.json();
   const text = (j.message?.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
