@@ -55,13 +55,6 @@ export default function App() {
     return <Onboarding onDone={saveProfile} />;
   }
 
-  // Back button on Android closes overlays / returns home
-  useEffect(() => {
-    const onPop = () => setView((v) => (v.name === "home" ? v : { name: "home" }));
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
   const avatarLetter = profile.name.charAt(0).toUpperCase();
 
   return (
