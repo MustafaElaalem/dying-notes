@@ -5,3 +5,6 @@ dev-dist/
 .env.*
 *.local
 .DS_Store
+
+# local worker secret (never commit)
+worker/.dev.vars

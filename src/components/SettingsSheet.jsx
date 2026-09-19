@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDragDismiss } from "../gestures";
-import { getKey, setKey, getLang, setLang, hasKey } from "../cohere";
+import { getKey, setKey, getLang, setLang, hasKey, getWorkerUrl, setWorkerUrl } from "../cohere";
 import { db } from "../db";
 import ConfirmDialog from "./ConfirmDialog.jsx";
 import { Icon } from "./Icons.jsx";
@@ -10,6 +10,7 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
   const [reveal, setReveal] = useState(false);
   const [lang, setLangState] = useState(getLang());
   const [savedFlash, setSavedFlash] = useState(false);
+  const [workerUrl, setWorkerUrlState] = useState(getWorkerUrl());
   const [confirmWipe, setConfirmWipe] = useState(false);
   const { ref: dragRef, bind: dragBind } = useDragDismiss(onClose);
 
@@ -39,18 +40,32 @@ export default function SettingsSheet({ theme, onThemeChange, onClose }) {
         </div>
 
         <div className="set-group">
-          <div className="lp-label">Cohere API key</div>
+          <div className="lp-label">Cloud endpoint (recommended)</div>
           <div className="key-row">
-            <input type={reveal ? "text" : "password"} value={key} onChange={(e) => saveKey(e.target.value)}
-              placeholder="Paste your key (stays on this device)" spellCheck="false" autoComplete="off" aria-label="Cohere API key" />
-            <button className="iconbtn small" onClick={() => setReveal((v) => !v)} aria-label={reveal ? "Hide key" : "Show key"}>
-              <Icon name={reveal ? "moon" : "sun"} size={15} />
-            </button>
+            <input value={workerUrl} onChange={(e) => { setWorkerUrl(e.target.value); setWorkerUrlState(e.target.value); }}
+              placeholder="https://dying-notes-api.<you>.workers.dev" spellCheck="false" autoComplete="off" aria-label="Cloud endpoint URL" />
           </div>
           <small className="set-hint">
-            {hasKey() ? (savedFlash ? "Saved to this device." : "Stored in this browser only. Never sent anywhere but Cohere.") : "Needed for transcription and tidying."}
+            {workerUrl.trim() ? "All calls route through your Cloudflare Worker. No key needed on this device."
+              : "Optional: paste your Worker URL and the Cohere key lives server-side. Leave empty to use a key stored on this device."}
           </small>
         </div>
+
+        {!workerUrl.trim() && (
+          <div className="set-group">
+            <div className="lp-label">Cohere API key</div>
+            <div className="key-row">
+              <input type={reveal ? "text" : "password"} value={key} onChange={(e) => saveKey(e.target.value)}
+                placeholder="Paste your key (stays on this device)" spellCheck="false" autoComplete="off" aria-label="Cohere API key" />
+              <button className="iconbtn small" onClick={() => setReveal((v) => !v)} aria-label={reveal ? "Hide key" : "Show key"}>
+                <Icon name={reveal ? "moon" : "sun"} size={15} />
+              </button>
+            </div>
+            <small className="set-hint">
+              {hasKey() ? (savedFlash ? "Saved to this device." : "Stored in this browser only. Never sent anywhere but Cohere.") : "Needed for transcription and tidying."}
+            </small>
+          </div>
+        )}
 
         <div className="set-group">
           <div className="lp-label">Spoken language</div>
