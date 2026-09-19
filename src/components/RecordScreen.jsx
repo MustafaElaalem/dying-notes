@@ -8,6 +8,7 @@ export default function RecordScreen({ onDone, onCancel }) {
   const recRef = useRef(null);
   const [secs, setSecs] = useState(0);
   const [level, setLevel] = useState(0);
+  const [ready, setReady] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -15,18 +16,23 @@ export default function RecordScreen({ onDone, onCancel }) {
     const rec = new Recorder();
     recRef.current = rec;
     rec.onLevel = setLevel;
-    rec.start().catch((e) => setErr(e.name === "NotAllowedError" ? "Microphone permission was denied. Allow it in your browser and try again." : `Could not start recording: ${e.message}`));
-    const t = setInterval(() => {
-      const s = rec.duration();
-      setSecs(s);
-      if (s >= MAX_RECORD_SECONDS) { clearInterval(t); finish(); }
-    }, 200);
-    return () => { clearInterval(t); rec.discard(); };
+    let interval = null;
+    rec.start()
+      .then(() => {
+        setReady(true);
+        interval = setInterval(() => {
+          const s = rec.duration();
+          setSecs(s);
+          if (s >= MAX_RECORD_SECONDS) { clearInterval(interval); finish(); }
+        }, 200);
+      })
+      .catch((e) => setErr(e.name === "NotAllowedError" ? "Microphone permission was denied. Allow it in your browser and try again." : `Could not start recording: ${e.message}`));
+    return () => { if (interval) clearInterval(interval); rec.discard(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function finish() {
-    if (busy) return;
+    if (busy || !ready) return;
     setBusy(true);
     try {
       const blob = await recRef.current.stop();
@@ -39,7 +45,7 @@ export default function RecordScreen({ onDone, onCancel }) {
   }
 
   const left = Math.max(0, MAX_RECORD_SECONDS - secs);
-  const windingDown = left <= 15 && left > 0;
+  const windingDown = ready && left <= 15 && left > 0;
 
   return (
     <div className="screen capture">
@@ -62,12 +68,12 @@ export default function RecordScreen({ onDone, onCancel }) {
               <span style={{ width: `${Math.min(100, (secs / MAX_RECORD_SECONDS) * 100)}%` }} />
             </div>
             <div className="cap-state">
-              <span className="recdot" />{windingDown ? `${left}s left` : "Listening"}
+              <span className="recdot" />{windingDown ? `${left}s left` : ready ? "Listening" : "Starting mic…"}
             </div>
             <div className="bigwave">
               {BARS.map((h, i) => {
                 const live = h * (0.35 + level * 1.3);
-                return <span key={i} style={{ "--h": Math.min(1, live) }} />;
+                return <span key={i} style={{ "--h": ready ? Math.min(1, live) : 0.06 }} />;
               })}
             </div>
             <div className="cap-hint">Up to {Math.round(MAX_RECORD_SECONDS / 60)} minutes. Think as long as you like — stop when you're done.</div>
@@ -82,7 +88,7 @@ export default function RecordScreen({ onDone, onCancel }) {
 
       <div className="cap-controls">
         <button className="discard" onClick={onCancel}>Discard</button>
-        <button className="stopbtn" onClick={finish} disabled={busy} aria-label="Stop recording">
+        <button className="stopbtn" onClick={finish} disabled={busy || !ready} aria-label="Stop recording">
           <Icon name={busy ? "clock" : "stop"} size={28} />
         </button>
       </div>

@@ -49,17 +49,22 @@ export class Recorder {
   }
 
   duration() {
-    return (performance.now() - this.startedAt) / 1000;
+    return this.startedAt ? (performance.now() - this.startedAt) / 1000 : 0;
   }
 
   async #teardown() {
     this.stopped = true;
     if (this.raf) cancelAnimationFrame(this.raf);
-    this.stream.getTracks().forEach((t) => t.stop());
+    this.stream?.getTracks().forEach((t) => t.stop());
     if (this.ctx && this.ctx.state !== "closed") await this.ctx.close().catch(() => {});
   }
 
   async stop() {
+    // start() may still be awaiting mic permission — nothing to stop yet
+    if (!this.recorder) {
+      await this.#teardown();
+      throw new Error("The microphone was still starting. Give it a second and try again.");
+    }
     const done = new Promise((resolve) => { this.recorder.onstop = () => resolve(); });
     this.recorder.stop();
     await done;
