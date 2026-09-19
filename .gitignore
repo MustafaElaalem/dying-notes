@@ -8,3 +8,4 @@ dev-dist/
 
 # local worker secret (never commit)
 worker/.dev.vars
+worker/.wrangler/
