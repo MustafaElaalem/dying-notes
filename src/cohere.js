@@ -42,8 +42,11 @@ export async function transcribe(audioBlob, lang = "ar") {
   return (j.text || "").trim();
 }
 
-const TIDY_PROMPT = `You tidy raw voice-note transcripts. Reply with ONLY a JSON object, no markdown fences, in the SAME language as the transcript (Arabic or English), with exactly these keys:
-{"title": string (max 6 words, or "" if nothing fits), "body": string (the transcript cleaned up: fix filler words, punctuation, spacing; keep the speaker's meaning and language), "tasks": string[] (short actionable items extracted from it; [] if none)}
+const TIDY_PROMPT = `You tidy raw voice-note transcripts and must honor the speaker's intent. Reply with ONLY a JSON object, no markdown fences. EVERY string you output (title, body, each task) MUST be in the same language as the transcript: an English transcript gets English tasks, an Arabic transcript gets Arabic tasks. Keys:
+{"title": string (max 6 words, or "" if nothing fits), "body": string (the transcript cleaned up: fix filler words, punctuation, spacing; keep the speaker's meaning and language; "" if it was purely a task list), "tasks": string[] , "intent": "task" | "note"}
+Intent rules:
+- If the speaker expresses intent to create tasks, todos, a list, or reminders (e.g. "I want to create a task", "remind me to...", "add to my list", "I need to...", Arabic equivalents like "أريد إنشاء مهام", "ذكرني", "خاصني ندير", "عندي أشياء خاصني نديرهم"), set intent "task": put each actionable item in tasks as a short imperative phrase, and leave body "" if the whole utterance was the list.
+- If the utterance is a thought, memory, or information with no to-do intent (even if it mentions actions in passing), set intent "note" and tasks MUST be [].
 Transcript:`;
 
 export async function tidy(transcript) {
@@ -68,10 +71,14 @@ function parseTidy(text, fallbackTranscript) {
     const m = text.match(/\{[\s\S]*\}/);
     if (m) {
       const o = JSON.parse(m[0]);
+      // intent "note" forces tasks empty regardless of what the model listed
+      const tasks = (o.intent === "note" || !Array.isArray(o.tasks))
+        ? []
+        : o.tasks.filter((t) => typeof t === "string" && t.trim()).map((t) => ({ text: t.trim(), done: false }));
       return {
         title: typeof o.title === "string" ? o.title : "",
         body: typeof o.body === "string" && o.body.trim() ? o.body : fallbackTranscript,
-        tasks: Array.isArray(o.tasks) ? o.tasks.filter((t) => typeof t === "string" && t.trim()).map((t) => ({ text: t.trim(), done: false })) : []
+        tasks
       };
     }
   } catch { /* fall through */ }

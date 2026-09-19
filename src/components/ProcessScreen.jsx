@@ -29,7 +29,8 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
           tidied = { title: "", body: transcript, tasks: [] }; // tidy is a bonus; raw transcript still saves
         }
         const id = await createNote({
-          type: "voice",
+          // intent-driven type: a task-intent utterance becomes a checklist note
+          type: tidied.tasks.length ? "checklist" : "voice",
           title: tidied.title,
           body: tidied.body,
           tasks: tidied.tasks,
