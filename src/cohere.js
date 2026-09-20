@@ -37,14 +37,22 @@ async function cohereError(res) {
   return new Error(msg);
 }
 
-// audio: Blob (WAV, 16kHz mono). lang: "ar" | "en".
+// audio: Blob as recorded by MediaRecorder (webm/opus, mp4, or ogg — all
+// accepted by Cohere directly). lang: "ar" | "en".
 // Contract (verified live): POST /v1/audio/transcriptions, multipart,
 // model and language fields MUST come before the file part.
+const audioName = (blob) => {
+  const t = blob.type || "";
+  if (t.includes("mp4")) return "note.mp4";
+  if (t.includes("ogg")) return "note.ogg";
+  return "note.webm";
+};
+
 export async function transcribe(audioBlob, lang = "ar") {
   const fd = new FormData();
   fd.append("model", TRANSCRIBE_MODEL);
   fd.append("language", lang);
-  fd.append("file", audioBlob, "note.wav");
+  fd.append("file", audioBlob, audioName(audioBlob));
   const res = await fetchT(`${WORKER}/transcribe`, { method: "POST", body: fd }, TIMEOUTS.transcribe);
   if (!res.ok) throw await cohereError(res);
   const j = await res.json();

@@ -1,0 +1,47 @@
+[
+  {
+    "step": "structure",
+    "detail": "call 1/5",
+    "wall": 2.635
+  },
+  {
+    "step": "structure",
+    "detail": "call 2/5",
+    "wall": 2.801
+  },
+  {
+    "step": "structure",
+    "detail": "call 3/5",
+    "wall": 2.568
+  },
+  {
+    "step": "structure",
+    "detail": "call 4/5",
+    "wall": 3.082
+  },
+  {
+    "step": "structure",
+    "detail": "call 5/5",
+    "wall": 1.896
+  },
+  {
+    "step": "transcribe",
+    "detail": "20s webm unthrottled",
+    "wall": 1.087
+  },
+  {
+    "step": "transcribe",
+    "detail": "180s webm unthrottled",
+    "wall": 2.592
+  },
+  {
+    "step": "transcribe",
+    "detail": "180s webm @256K/s",
+    "wall": 4.03
+  },
+  {
+    "step": "transcribe",
+    "detail": "180s webm @64K/s",
+    "wall": 10.983
+  }
+]

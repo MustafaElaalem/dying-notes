@@ -121,6 +121,11 @@ export default {
           model: DEEPSEEK,
           temperature: 0.2,
           max_tokens: 1000,
+          // v4.1-flash is a reasoning model: left on, it burns the whole
+          // completion budget on thinking and never emits the JSON (measured:
+          // 1000/1000 reasoning tokens, empty content, 10-40s). Disabling it
+          // returns valid JSON in ~2s.
+          reasoning: { enabled: false },
           messages: [{ role: "user", content: STRUCTURE_PROMPT + "\n" + body.transcript.slice(0, 6000) }]
         })
       }, 45_000);

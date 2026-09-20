@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { toWav } from "../audio";
 import { transcribe, tidy, structure, getLang } from "../cohere";
 import { createNote } from "../db";
 import { Icon } from "./Icons.jsx";
 
-const STEPS = ["Converting", "Transcribing", "Structuring"];
+const STEPS = ["Transcribing", "Structuring"];
 
 export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
   const [step, setStep] = useState(0);
@@ -18,11 +17,12 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
     (async () => {
       try {
         setStep(0);
-        const wav = await toWav(blob);
-        setStep(1);
-        const transcript = await transcribe(wav, getLang());
+        // Upload the recorded blob as-is (webm/opus ~10x smaller than WAV —
+        // the WAV round-trip cost mobile 20-100s of upload per long note).
+        const audio = blob;
+        const transcript = await transcribe(audio, getLang());
         if (!transcript) throw new Error("The transcript came back empty. Try speaking a bit louder.");
-        setStep(2);
+        setStep(1);
 
         // DeepSeek structures the note in one call: intent + title/body/tasks.
         // Any failure falls back to the Cohere combined prompt.
@@ -45,7 +45,7 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
           body: tidied.body,
           tasks: tidied.tasks,
           rawTranscript: transcript,
-          audio: wav,
+          audio,
           audioDuration: duration,
           tidied: true,
           lifespan: "1w"
@@ -89,7 +89,7 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
       <div className="steps">
         {STEPS.map((s, i) => (
           <span key={s} className={"step" + (error ? "" : i < step ? " done" : i === step ? " active" : "")}>
-            {i < step && !error ? <Icon name="check" size={13} /> : i === 2 ? <Icon name="sparkle" size={13} /> : null}
+            {i < step && !error ? <Icon name="check" size={13} /> : i === 1 ? <Icon name="sparkle" size={13} /> : null}
             {s}
           </span>
         ))}

@@ -1,7 +1,7 @@
-// Audio pipeline: MediaRecorder capture -> 16kHz mono WAV (what Cohere accepts),
-// plus a live analyser feeding the waveform. Recording ends ONLY when the user
-// stops it — or when the hard cap is reached. No silence auto-stop: thinking
-// pauses are allowed.
+// Audio capture: MediaRecorder (webm/opus, or mp4 on iOS) + a live analyser
+// feeding the waveform. The recorded blob is uploaded and stored as-is —
+// no WAV conversion. Recording ends ONLY when the user stops it — or when
+// the hard cap is reached. No silence auto-stop: thinking pauses are allowed.
 
 export const MAX_RECORD_SECONDS = 180; // 3 minutes per voice note
 
@@ -79,37 +79,8 @@ export class Recorder {
 }
 
 // Converts any recorded blob to 16kHz mono 16-bit WAV via decode + OfflineAudioContext.
-export async function toWav(blob) {
-  const arr = await blob.arrayBuffer();
-  const ac = new (window.AudioContext || window.webkitAudioContext)();
-  const decoded = await ac.decodeAudioData(arr.slice(0));
-  await ac.close().catch(() => {});
-  const sr = 16000;
-  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * sr)), sr);
-  const src = off.createBufferSource();
-  src.buffer = decoded;
-  src.connect(off.destination);
-  src.start();
-  const rendered = await off.startRendering();
-  const ch = rendered.getChannelData(0);
-
-  const header = BufferLike(44 + ch.length * 2);
-  const dv = new DataView(header);
-  const ws = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
-  ws(0, "RIFF"); dv.setUint32(4, 36 + ch.length * 2, true); ws(8, "WAVE");
-  ws(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
-  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
-  ws(36, "data"); dv.setUint32(40, ch.length * 2, true);
-  for (let i = 0; i < ch.length; i++) {
-    const v = Math.max(-1, Math.min(1, ch[i]));
-    dv.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
-  }
-  return new Blob([header], { type: "audio/wav" });
-}
-
-function BufferLike(size) {
-  return new ArrayBuffer(size);
-}
+// REMOVED 2026-09-20: Cohere accepts the recorded container directly and it is
+// ~10x smaller — the WAV round-trip added 20-100s of upload on mobile uplinks.
 
 export function fmtTime(sec) {
   const s = Math.max(0, Math.floor(sec));
