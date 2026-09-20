@@ -1,10 +1,10 @@
 // dying-notes API proxy (Cloudflare Worker, zero dependencies).
 // Keeps the Cohere key server-side, locks calls to the PWA's origin,
-// rate-limits, and structures notes via OpenRouter DeepSeek (/structure).
+// rate-limits, and structures notes via OpenRouter GLM 5.3 flash (/structure).
 
 const COHERE = "https://api.cohere.com";
 const OPENROUTER = "https://openrouter.ai/api/v1/chat/completions";
-const DEEPSEEK = "deepseek/deepseek-v4.1-flash";
+const STRUCTURE_MODEL = "z-ai/glm-5.3-flash";
 const TIDY_MODEL = "command-r7b-arabic-02-2025";
 const RATE_LIMIT = 60;        // requests...
 const RATE_WINDOW = 5 * 60;   // ...per 5 minutes per IP (isolate-memory, best effort)
@@ -15,8 +15,8 @@ const RATE_WINDOW = 5 * 60;   // ...per 5 minutes per IP (isolate-memory, best e
 const STRUCTURE_PROMPT = `You structure voice-note transcripts and must honor the speaker's intent. Reply with ONLY JSON, no markdown fences. EVERY string (title, body, each task) MUST be in the transcript's language. Keys: {"intent": "task" | "mixed" | "note" | "not_a_note", "title": string (max 6 words, "" if nothing fits), "body": string (the prose cleaned up: fix filler words, punctuation, spacing; "" if it was purely a task list), "tasks": string[] (short imperative phrases)}.
 Rules:
 - intent "task": essentially items to do (errands, reminders, lists, "I need to...", Arabic equivalents like "خاصني ندير", "أريد إنشاء مهام"). tasks filled, body "".
-- intent "mixed": meaningful prose AND explicit to-do items. body keeps the prose WITHOUT the to-do items, tasks extracts them.
-- intent "note": a thought, memory, or information with no to-do intent. tasks MUST be []. Never invent tasks that the speaker did not explicitly commit to doing.
+- intent "mixed": meaningful prose AND explicit to-do items — even a single to-do phrase inside prose (e.g. "خاصني نشري", "بغيت ندير", "I need to...", "remind me to...") makes it mixed. body keeps the prose WITHOUT the to-do items, tasks extracts them.
+- intent "note": a thought, memory, or information with NO to-do intent at all — if the speaker commits to doing anything, however briefly, it is not "note". tasks MUST be []. Never invent tasks that the speaker did not explicitly commit to doing.
 - intent "not_a_note": filler words only, empty, or too little content to keep. Everything empty.
 Transcript:`;
 
@@ -118,14 +118,15 @@ export default {
           "X-Title": "dying-notes"
         },
         body: JSON.stringify({
-          model: DEEPSEEK,
+          model: STRUCTURE_MODEL,
           temperature: 0.2,
           max_tokens: 1000,
-          // v4.1-flash is a reasoning model: left on, it burns the whole
-          // completion budget on thinking and never emits the JSON (measured:
-          // 1000/1000 reasoning tokens, empty content, 10-40s). Disabling it
-          // returns valid JSON in ~2s.
-          reasoning: { enabled: false },
+          // GLM 5.3 flash: thinking is MANDATORY on this endpoint (enabled:false
+          // is a 400) and at default effort it burns the whole completion
+          // budget on reasoning and never emits the JSON — measured 1000/1000
+          // reasoning tokens, empty content, 7-30s. effort "low" answers
+          // directly: valid JSON in 1-3s. Re-probe before changing this.
+          reasoning: { effort: "low" },
           messages: [{ role: "user", content: STRUCTURE_PROMPT + "\n" + body.transcript.slice(0, 6000) }]
         })
       }, 45_000);

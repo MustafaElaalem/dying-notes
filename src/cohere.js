@@ -78,7 +78,7 @@ export async function tidy(transcript) {
   return parseTidy(text, transcript);
 }
 
-// ---- Note structuring (OpenRouter DeepSeek via the Worker) ----
+// ---- Note structuring (OpenRouter GLM 5.3 flash via the Worker) ----
 // One call classifies intent AND writes the note: task | mixed | note | not_a_note.
 // Returns null on any failure — callers fall back to the Cohere combined prompt.
 

@@ -70,7 +70,7 @@ console.log(h.ok ? "health: OK" : "health: FAILED " + h.err);
 if (!h.ok) process.exit(1);
 
 // --- /structure: small JSON POST, desktop network, 5 samples ---
-console.log("\n-- /structure (DeepSeek via OpenRouter, ~1KB body, 5 calls) --");
+console.log("\n-- /structure (structure model via OpenRouter, ~1KB body, 5 calls) --");
 const bodyFile = path.join(HERE, "diag-body.json");
 if (!existsSync(bodyFile) || process.argv.includes("--refresh-body")) {
   const transcript =

@@ -24,7 +24,7 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
         if (!transcript) throw new Error("The transcript came back empty. Try speaking a bit louder.");
         setStep(1);
 
-        // DeepSeek structures the note in one call: intent + title/body/tasks.
+        // GLM structures the note in one call: intent + title/body/tasks.
         // Any failure falls back to the Cohere combined prompt.
         const s = await structure(transcript, "voice");
         if (s && s.intent === "not_a_note") {
