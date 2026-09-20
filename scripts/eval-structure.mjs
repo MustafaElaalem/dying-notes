@@ -55,13 +55,23 @@ const GOLDEN = [
 
 const MAP = { task_list: "task", note_with_tasks: "mixed", pure_note: "note", not_a_note: "not_a_note" };
 
+// Optional: [workerUrl] [model] [reasoning: off|low|default] — model/reasoning
+// ride along in the body (honored by the worker's benchmark passthrough).
+const MODEL = process.argv[3];
+const REASONING = process.argv[4] === "off" ? { enabled: false }
+  : process.argv[4] === "low" ? { effort: "low" } : undefined;
+if (MODEL) console.log(`evaluating model=${MODEL} reasoning=${process.argv[4] || "default"} against ${WORKER}`);
+
 async function structure(transcript, tries = 3) {
   for (let i = 0; i < 4; i++) {
     try {
+      const body = { transcript, input_mode: "voice" };
+      if (MODEL) body.model = MODEL;
+      if (REASONING) body.reasoning = REASONING;
       const res = await fetch(`${WORKER}/structure`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Origin: "https://mustafaelaalem.github.io" },
-        body: JSON.stringify({ transcript, input_mode: "voice" }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(70_000)
       });
       if (!res.ok) return { error: `HTTP ${res.status}` };
