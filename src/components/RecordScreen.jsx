@@ -9,6 +9,7 @@ export default function RecordScreen({ onDone, onCancel }) {
   const [secs, setSecs] = useState(0);
   const [level, setLevel] = useState(0);
   const [ready, setReady] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -44,6 +45,14 @@ export default function RecordScreen({ onDone, onCancel }) {
     }
   }
 
+  // Hold the recording: timer and 3-min cap freeze; only recorded audio counts.
+  function togglePause() {
+    const rec = recRef.current;
+    if (!rec || busy || !ready) return;
+    if (rec.paused) { rec.resume(); setPaused(false); }
+    else { rec.pause(); setPaused(true); }
+  }
+
   const left = Math.max(0, MAX_RECORD_SECONDS - secs);
   const windingDown = ready && left <= 15 && left > 0;
 
@@ -63,12 +72,12 @@ export default function RecordScreen({ onDone, onCancel }) {
           </div>
         ) : (
           <>
-            <div className={"timer" + (windingDown ? " capped" : "")}>{fmtTime(secs)}</div>
+            <div className={"timer" + (paused ? " paused" : "") + (windingDown ? " capped" : "")}>{fmtTime(secs)}</div>
             <div className="rec-progress" aria-hidden="true">
               <span style={{ width: `${Math.min(100, (secs / MAX_RECORD_SECONDS) * 100)}%` }} />
             </div>
-            <div className="cap-state">
-              <span className="recdot" />{windingDown ? `${left}s left` : ready ? "Listening" : "Starting mic…"}
+            <div className={"cap-state" + (paused ? " paused" : "")}>
+              <span className="recdot" />{windingDown ? `${left}s left` : paused ? "Paused" : ready ? "Listening" : "Starting mic…"}
             </div>
             <div className="bigwave">
               {BARS.map((h, i) => {
@@ -76,7 +85,7 @@ export default function RecordScreen({ onDone, onCancel }) {
                 return <span key={i} style={{ "--h": ready ? Math.min(1, live) : 0.06 }} />;
               })}
             </div>
-            <div className="cap-hint">Up to {Math.round(MAX_RECORD_SECONDS / 60)} minutes. Think as long as you like — stop when you're done.</div>
+            <div className="cap-hint">Up to {Math.round(MAX_RECORD_SECONDS / 60)} minutes of audio. Pause or think as long as you like — stop when you're done.</div>
           </>
         )}
       </div>
@@ -88,6 +97,9 @@ export default function RecordScreen({ onDone, onCancel }) {
 
       <div className="cap-controls">
         <button className="discard" onClick={onCancel}>Discard</button>
+        <button className="pausebtn" onClick={togglePause} disabled={busy || !ready} aria-label={paused ? "Resume recording" : "Pause recording"}>
+          <Icon name={paused ? "play" : "pause"} size={22} />
+        </button>
         <button className="stopbtn" onClick={finish} disabled={busy || !ready} aria-label="Stop recording">
           <Icon name={busy ? "clock" : "stop"} size={28} />
         </button>

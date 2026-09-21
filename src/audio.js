@@ -1,7 +1,9 @@
 // Audio capture: MediaRecorder (webm/opus, or mp4 on iOS) + a live analyser
 // feeding the waveform. The recorded blob is uploaded and stored as-is —
 // no WAV conversion. Recording ends ONLY when the user stops it — or when
-// the hard cap is reached. No silence auto-stop: thinking pauses are allowed.
+// the hard cap is reached. No silence auto-stop: thinking pauses are allowed
+// (and can be held explicitly via pause()/resume(), which freezes the timer
+// and the 3-minute cap — only recorded audio counts).
 
 export const MAX_RECORD_SECONDS = 180; // 3 minutes per voice note
 
@@ -15,6 +17,9 @@ export class Recorder {
     this.raf = null;
     this.startedAt = 0;
     this.stopped = false;
+    this.paused = false;      // MediaRecorder paused — duration() freezes
+    this.recordedMs = 0;      // accumulated recorded time (pauses excluded)
+    this.segStart = 0;        // performance.now() when the current segment began
     this.onLevel = null;   // (level 0..1) => void
   }
 
@@ -34,12 +39,33 @@ export class Recorder {
 
     this.startedAt = performance.now();
     this.stopped = false;
+    this.paused = false;
+    this.recordedMs = 0;
+    this.segStart = this.startedAt;
     this.recorder.start(250);
     this.#loop();
   }
 
+  // Pause/resume the capture. Paused spans emit no chunks, so the final blob
+  // (and duration()) contains only what was actually recorded. No-ops when
+  // the recorder isn't in the matching state (e.g. still starting up).
+  pause() {
+    if (!this.recorder || this.paused || this.recorder.state !== "recording") return;
+    this.recorder.pause();
+    this.recordedMs += performance.now() - this.segStart;
+    this.paused = true;
+  }
+
+  resume() {
+    if (!this.recorder || !this.paused || this.recorder.state !== "paused") return;
+    this.recorder.resume();
+    this.segStart = performance.now();
+    this.paused = false;
+  }
+
   #loop() {
     if (this.stopped) return;
+    if (this.paused) { this.onLevel?.(0); this.raf = requestAnimationFrame(() => this.#loop()); return; }
     const buf = new Uint8Array(this.analyser.frequencyBinCount);
     this.analyser.getByteTimeDomainData(buf);
     let peak = 0;
@@ -49,7 +75,9 @@ export class Recorder {
   }
 
   duration() {
-    return this.startedAt ? (performance.now() - this.startedAt) / 1000 : 0;
+    if (!this.startedAt) return 0;
+    const live = this.paused ? 0 : performance.now() - this.segStart;
+    return (this.recordedMs + live) / 1000;
   }
 
   async #teardown() {

@@ -246,6 +246,15 @@ input, textarea { font: inherit; color: inherit; }
 }
 .stopbtn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 rgba(0, 0, 0, .5); }
 .stopbtn:disabled { opacity: .7; }
+.pausebtn {
+  width: 58px; height: 58px; border-radius: 50%; border: 2.5px solid var(--line-strong);
+  background: var(--g-card); color: var(--accent); display: grid; place-items: center;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, .5);
+}
+.pausebtn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0, 0, 0, .5); }
+.pausebtn:disabled { opacity: .7; }
+.cap-state.paused .recdot { animation: none; background: var(--accent); }
+.timer.paused { color: var(--g-meta); }
 
 /* ---------- processing ---------- */
 .nav-row { display: flex; align-items: center; justify-content: space-between; padding: max(14px, env(safe-area-inset-top)) 16px 6px; gap: 10px; }
