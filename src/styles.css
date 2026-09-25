@@ -115,8 +115,10 @@ input, textarea { font: inherit; color: inherit; }
 .note.tinted { background: var(--tint); }
 .note.dead { background: var(--ghosted); border-color: var(--g-hairline); box-shadow: none; }
 .note.dead .note-title, .note.dead .note-body { color: var(--ghost-ink); }
-.note-title { font-family: var(--font-d); font-size: 15.5px; font-weight: 600; }
-.note-body { font-size: 13px; line-height: 1.5; opacity: .88; white-space: pre-wrap; word-break: break-word; }
+/* Cards preview a note, the detail screen scrolls it: clamp each part so one
+   long note can't eat the grid. -webkit-line-clamp needs -webkit-box. */
+.note-title { font-family: var(--font-d); font-size: 15.5px; font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.note-body { font-size: 13px; line-height: 1.5; opacity: .88; white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
 .note-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; min-height: 20px; gap: 6px; }
 .foot-right { display: flex; align-items: center; gap: 2px; }
 .note-foot time { font-size: 10.5px; color: var(--g-meta); font-weight: 700; }
@@ -152,6 +154,8 @@ input, textarea { font: inherit; color: inherit; }
 
 .todo { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.45; }
 .todo + .todo { margin-top: 7px; }
+.note .todo span[dir="auto"] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.todo-more { font-size: 10.5px; font-weight: 800; color: var(--g-meta); }
 .todo .cb {
   width: 17px; height: 17px; flex: none; margin-top: 1px; border-radius: 5.5px;
   border: 2px solid var(--line-strong); background: var(--g-card);

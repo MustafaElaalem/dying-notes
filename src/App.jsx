@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sweep, createNote } from "./db";
 import { setLang } from "./cohere";
 import HomeScreen from "./components/HomeScreen.jsx";
@@ -23,6 +23,7 @@ export default function App() {
   const [profile, setProfile] = useState(loadProfile);
   const [view, setView] = useState({ name: "home" });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [theme, setTheme] = useState(initialTheme);
 
   useEffect(() => {
@@ -37,12 +38,33 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
-  // Back button on Android closes overlays / returns home
+  // Back button on mobile must land on home, not out of the app. Views and
+  // overlays are state, not routes, so the browser history has nothing to pop
+  // unless we put it there: exactly one entry is pushed while anything covers
+  // home (note detail, recorder, settings, new-note sheet). Hardware/gesture
+  // back pops that entry and popstate returns to home; in-app dismissal flips
+  // the state instead and the effect pops the entry for us. One entry total —
+  // surfaces never stack (settings/sheet only open on home) — so back always
+  // means "one level down to home".
+  const subSurface = view.name !== "home" || settingsOpen || sheetOpen;
+  const guardPushed = useRef(false);
   useEffect(() => {
-    const onPop = () => setView((v) => (v.name === "home" ? v : { name: "home" }));
+    const onPop = () => {
+      guardPushed.current = false;
+      setView((v) => (v.name === "home" ? v : { name: "home" }));
+      setSettingsOpen(false);
+      setSheetOpen(false);
+    };
     window.addEventListener("popstate", onPop);
+    if (subSurface && !guardPushed.current) {
+      history.pushState({ noted: "overlay" }, "");
+      guardPushed.current = true;
+    } else if (!subSurface && guardPushed.current) {
+      guardPushed.current = false;
+      history.back();
+    }
     return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  }, [subSurface]);
 
   function saveProfile(p) {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
@@ -62,6 +84,8 @@ export default function App() {
       {view.name === "home" && (
         <HomeScreen
           avatarLetter={avatarLetter}
+          sheetOpen={sheetOpen}
+          onSheetChange={setSheetOpen}
           onNewVoice={() => setView({ name: "record" })}
           onNewText={async () => {
             const id = await createNote({ type: "text", lifespan: "1w" });

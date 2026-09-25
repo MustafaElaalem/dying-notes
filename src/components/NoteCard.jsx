@@ -92,6 +92,9 @@ export default function NoteCard({ note, onOpen, onRequestDelete, dying = false 
               <span dir="auto">{t.text}</span>
             </div>
           ))}
+          {note.tasks.filter((t) => t.text).length > 5 && (
+            <div className="todo-more">+{note.tasks.filter((t) => t.text).length - 5} more</div>
+          )}
         </div>
       )}
       {dead ? (

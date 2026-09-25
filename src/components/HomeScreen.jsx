@@ -13,11 +13,10 @@ const FILTERS = [
   { id: "dead", label: "Dead", icon: "skull" }
 ];
 
-export default function HomeScreen({ avatarLetter = "M", onNewVoice, onNewText, onNewChecklist, onOpenNote, onOpenSettings }) {
+export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSheetChange, onNewVoice, onNewText, onNewChecklist, onOpenNote, onOpenSettings }) {
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const { ref: dragRef, bind: dragBind } = useDragDismiss(() => setSheetOpen(false));
+  const { ref: dragRef, bind: dragBind } = useDragDismiss(() => onSheetChange(false));
   const [confirmNote, setConfirmNote] = useState(null);
   const [deathNotice, setDeathNotice] = useState("");
   const [dyingId, setDyingId] = useState(null);
@@ -40,7 +39,7 @@ export default function HomeScreen({ avatarLetter = "M", onNewVoice, onNewText, 
 
   useEffect(() => {
     if (!sheetOpen) return;
-    const onKey = (e) => e.key === "Escape" && setSheetOpen(false);
+    const onKey = (e) => e.key === "Escape" && onSheetChange(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [sheetOpen]);
@@ -116,13 +115,13 @@ export default function HomeScreen({ avatarLetter = "M", onNewVoice, onNewText, 
         </div>
       )}
 
-      <button className="fab" onClick={() => setSheetOpen((v) => !v)} aria-label="New note">
+      <button className="fab" onClick={() => onSheetChange(!sheetOpen)} aria-label="New note">
         <Icon name={sheetOpen ? "x" : "mic"} size={28} />
       </button>
 
       {sheetOpen && (
         <div className="layer-sheet">
-          <div className="scrim" onClick={() => setSheetOpen(false)} />
+          <div className="scrim" onClick={() => onSheetChange(false)} />
           <div className="sheet">
             <div className="sheet-head">
               <div className="drag-zone" ref={dragRef} {...dragBind()}>
@@ -130,14 +129,14 @@ export default function HomeScreen({ avatarLetter = "M", onNewVoice, onNewText, 
                 <h3>New note</h3>
               </div>
             </div>
-            <button className="voice-card" onClick={() => { setSheetOpen(false); onNewVoice(); }}>
+            <button className="voice-card" onClick={() => { onSheetChange(false); onNewVoice(); }}>
               <span className="micb"><Icon name="mic" size={28} /></span>
               <span><b>Voice note</b><small>Speak naturally. It's transcribed, tidied and given a lifespan.</small></span>
               <Icon name="chev" size={22} className="go" />
             </button>
             <div className="opt-row">
-              <button className="opt" onClick={() => { setSheetOpen(false); onNewText(); }}><Icon name="text" />Text</button>
-              <button className="opt" onClick={() => { setSheetOpen(false); onNewChecklist(); }}><Icon name="list" />Checklist</button>
+              <button className="opt" onClick={() => { onSheetChange(false); onNewText(); }}><Icon name="text" />Text</button>
+              <button className="opt" onClick={() => { onSheetChange(false); onNewChecklist(); }}><Icon name="list" />Checklist</button>
             </div>
           </div>
         </div>
