@@ -97,9 +97,21 @@ export default function ReviewScreen({ id, onDone }) {
         )}
         {showRaw && note.rawTranscript && <p className="raw-transcript" dir="auto">{note.rawTranscript}</p>}
 
+        <div className="lifespan">
+          <div className="lp-label">Lifespan</div>
+          <div className="lp-opts">
+            {Object.entries(LIFESPANS).map(([key, v]) => (
+              <button key={key} className={"lp" + (currentLifespan === key ? " sel" : "")} onClick={() => setLifespan(id, key)}>
+                {key === "immortal" && <Icon name="infinity" size={13} />}
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <input className="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={persist} placeholder="Title" dir="auto" aria-label="Note title" />
 
-        <textarea className="edit-body" value={body} onChange={(e) => setBody(e.target.value)} onBlur={persist} placeholder="Say it here…" dir="auto" rows={Math.min(8, Math.max(3, body.split("\n").length + 1))} aria-label="Note body" />
+        <textarea className="edit-body" value={body} onChange={(e) => setBody(e.target.value)} onBlur={persist} placeholder="Say it here…" dir="auto" rows={Math.min(16, Math.max(3, body.split("\n").length + 1))} aria-label="Note body" />
 
         <div className="tasks-card">
           {note.tasks.map((t, i) => (
@@ -112,18 +124,6 @@ export default function ReviewScreen({ id, onDone }) {
           <div className="todo add">
             <span className="cb ghost"><Icon name="plus" size={12} /></span>
             <input value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()} placeholder="Add a task" aria-label="Add a task" />
-          </div>
-        </div>
-
-        <div className="lifespan">
-          <div className="lp-label">Lifespan</div>
-          <div className="lp-opts">
-            {Object.entries(LIFESPANS).map(([key, v]) => (
-              <button key={key} className={"lp" + (currentLifespan === key ? " sel" : "")} onClick={() => setLifespan(id, key)}>
-                {key === "immortal" && <Icon name="infinity" size={13} />}
-                {v.label}
-              </button>
-            ))}
           </div>
         </div>
       </div>
