@@ -38,12 +38,20 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
         } catch {
           tidied = { title: "", body: transcript, tasks: [] }; // formatting is a bonus; raw transcript still saves
         }
+        // Bodies are markdown (Notion-lite): AI tasks fold in as checklist
+        // lines so the whole note lives in one editable document.
+        const tasksMd = (tidied.tasks || [])
+          .map((t) => (typeof t === "string" ? t : t.text))
+          .filter((t) => t && t.trim())
+          .map((t) => `- [ ] ${t.trim()}`)
+          .join("\n");
+        const body = [tidied.body?.trim(), tasksMd].filter(Boolean).join("\n");
         const id = await createNote({
           // intent-driven type: a task-intent utterance becomes a checklist note
-          type: tidied.tasks.length ? "checklist" : "voice",
+          type: tasksMd ? "checklist" : "voice",
           title: tidied.title,
-          body: tidied.body,
-          tasks: tidied.tasks,
+          body,
+          tasks: [],
           rawTranscript: transcript,
           audio,
           audioDuration: duration,

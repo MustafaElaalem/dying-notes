@@ -167,6 +167,33 @@ input, textarea { font: inherit; color: inherit; }
 .todo:hover .task-x { opacity: 1; }
 .todo.add input { border: 0; outline: 0; background: none; flex: 1; font-size: 13px; }
 .todo.add input::placeholder { color: var(--g-ph); }
+
+/* ---------- markdown-lite body (Notion-style) ---------- */
+.body-tools { display: flex; justify-content: flex-end; margin: -6px 0 -4px; }
+.md-wrap { cursor: text; }
+.md-body { display: flex; flex-direction: column; gap: 7px; }
+.md-body .md-text, .md-bullet {
+  font-size: 14px; line-height: 1.6; opacity: .92; margin: 0;
+  white-space: pre-wrap; word-break: break-word;
+}
+.md-bullet { position: relative; padding-left: 18px; }
+.md-bullet::before { content: "•"; position: absolute; left: 5px; opacity: .7; }
+.md-h { font-family: var(--font-d); font-weight: 600; line-height: 1.35; }
+.md-h1 { font-size: 19px; } .md-h2 { font-size: 17px; } .md-h3 { font-size: 15px; }
+.md-check { cursor: pointer; }
+.md-empty { margin: 0; font-size: 13.5px; color: var(--g-ph); font-style: italic; }
+.md-body code, .md-bullet code, .md-text code, .todo code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em;
+  background: var(--g-sunken); border: 1px solid var(--g-hairline); border-radius: 5px; padding: 1px 5px;
+}
+/* card-scoped markdown previews run smaller + clamped */
+.note .md-h1 { font-size: 15px; } .note .md-h2 { font-size: 14px; } .note .md-h3 { font-size: 13.5px; }
+.note .md-bullet { font-size: 13px; line-height: 1.5; opacity: .88; padding-left: 15px; }
+.note .md-bullet::before { left: 3px; }
+.md-prev-line {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; white-space: normal; font-size: 13px; line-height: 1.5; opacity: .88;
+}
 .cb.ghost { border-style: dashed; color: var(--g-ph); background: transparent; }
 
 /* ---------- FAB + sheet ---------- */

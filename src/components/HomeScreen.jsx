@@ -135,14 +135,14 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
                 <h3>New note</h3>
               </div>
             </div>
-            <button className="voice-card" onClick={() => { onSheetChange(false); onNewVoice(); }}>
+            <button className="voice-card" onClick={onNewVoice}>
               <span className="micb"><Icon name="mic" size={28} /></span>
               <span><b>Voice note</b><small>Speak naturally. It's transcribed, tidied and given a lifespan.</small></span>
               <Icon name="chev" size={22} className="go" />
             </button>
             <div className="opt-row">
-              <button className="opt" onClick={() => { onSheetChange(false); onNewText(); }}><Icon name="text" />Text</button>
-              <button className="opt" onClick={() => { onSheetChange(false); onNewChecklist(); }}><Icon name="list" />Checklist</button>
+              <button className="opt" onClick={onNewText}><Icon name="text" />Text</button>
+              <button className="opt" onClick={onNewChecklist}><Icon name="list" />Checklist</button>
             </div>
           </div>
         </div>

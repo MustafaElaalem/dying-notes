@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, updateNote, setLifespan, deleteNote, LIFESPANS } from "../db";
+import { noteMarkdown, parseBlocks, toggleCheckLine, appendCheck } from "../markdown";
 import ConfirmDialog, { randomDeathNotice } from "./ConfirmDialog.jsx";
+import MdInline from "./MdInline.jsx";
 import { Icon } from "./Icons.jsx";
 
 function AudioPlayer({ note }) {
@@ -23,7 +25,30 @@ function AudioPlayer({ note }) {
   );
 }
 
-export default function ReviewScreen({ id, onDone }) {
+function BodyView({ blocks, onToggle }) {
+  if (!blocks.length) return <p className="md-empty">Nothing here yet — tap to write.</p>;
+  return (
+    <div className="md-body" dir="auto">
+      {blocks.map((b, i) =>
+        b.type === "check" ? (
+          <div key={i} className={"todo md-check" + (b.done ? " done" : "")} role="checkbox" aria-checked={b.done}
+            onClick={(e) => { e.stopPropagation(); onToggle(i); }}>
+            <span className="cb"><Icon name="check" size={13} /></span>
+            <span dir="auto"><MdInline text={b.text} /></span>
+          </div>
+        ) : b.type === "bullet" ? (
+          <div key={i} className="md-bullet"><MdInline text={b.text} /></div>
+        ) : b.type === "heading" ? (
+          <div key={i} className={"md-h md-h" + b.level}><MdInline text={b.text} /></div>
+        ) : (
+          <p key={i} className="md-text"><MdInline text={b.text} /></p>
+        )
+      )}
+    </div>
+  );
+}
+
+export default function ReviewScreen({ id, onDone, startInEditor = false }) {
   const note = useLiveQuery(() => db.notes.get(id), [id]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -32,19 +57,23 @@ export default function ReviewScreen({ id, onDone }) {
   const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deathNotice, setDeathNotice] = useState(randomDeathNotice());
+  const [editingBody, setEditingBody] = useState(startInEditor);
   const hydrated = useRef(false);
 
   useEffect(() => {
     if (note && !hydrated.current) {
       hydrated.current = true;
       setTitle(note.title || "");
-      setBody(note.body || "");
+      // legacy tasks fold into the body here; persist() commits the fold
+      setBody(noteMarkdown(note));
     }
   }, [note]);
 
   if (!note) return <div className="screen" />;
 
-  const persist = (extra = {}) => updateNote(id, { title, body, ...extra });
+  const blocks = parseBlocks(body);
+
+  const persist = (extra = {}) => updateNote(id, { title, body, tasks: [], ...extra });
 
   async function saveAndClose() {
     await persist();
@@ -52,22 +81,30 @@ export default function ReviewScreen({ id, onDone }) {
     onDone();
   }
 
+  function toggleEditing() {
+    if (editingBody) {
+      persist();
+      setEditingBody(false);
+    } else {
+      setEditingBody(true);
+    }
+  }
+
+  async function toggleCheck(i) {
+    const b = blocks[i];
+    if (!b) return;
+    const next = toggleCheckLine(body, b.line);
+    setBody(next);
+    await persist({ body: next });
+  }
+
   async function addTask() {
     const t = newTask.trim();
     if (!t) return;
-    const tasks = [...(note.tasks || []), { text: t, done: false }];
-    await updateNote(id, { tasks, title, body });
+    const next = appendCheck(body, t);
+    setBody(next);
     setNewTask("");
-  }
-
-  async function toggleTask(i) {
-    const tasks = note.tasks.map((t, j) => (j === i ? { ...t, done: !t.done } : t));
-    await updateNote(id, { tasks, title, body });
-  }
-
-  async function removeTask(i) {
-    const tasks = note.tasks.filter((_, j) => j !== i);
-    await updateNote(id, { tasks, title, body });
+    await persist({ body: next });
   }
 
   // The chosen lifespan is stored on the note. Legacy notes (created before it
@@ -82,7 +119,7 @@ export default function ReviewScreen({ id, onDone }) {
     <div className="screen">
       <div className="nav-row">
         <button className="iconbtn" onClick={onDone} aria-label="Back"><Icon name="x" size={16} /></button>
-        <span className="ttl">Edit note</span>
+        <span className="ttl">Note</span>
         <button className="donepill" onClick={saveAndClose}>Done</button>
       </div>
 
@@ -111,16 +148,24 @@ export default function ReviewScreen({ id, onDone }) {
 
         <input className="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={persist} placeholder="Title" dir="auto" aria-label="Note title" />
 
-        <textarea className="edit-body" value={body} onChange={(e) => setBody(e.target.value)} onBlur={persist} placeholder="Say it here…" dir="auto" rows={Math.min(16, Math.max(3, body.split("\n").length + 1))} aria-label="Note body" />
+        <div className="body-tools">
+          <button className="linkbtn" onClick={toggleEditing}>{editingBody ? "Preview" : "Edit"}</button>
+        </div>
+
+        {editingBody ? (
+          <textarea
+            className="edit-body" value={body} onChange={(e) => setBody(e.target.value)} onBlur={persist}
+            placeholder="Say it here… '- [ ] ' makes a task" dir="auto" autoFocus
+            rows={Math.min(16, Math.max(3, body.split("\n").length + 1))}
+            aria-label="Note body"
+          />
+        ) : (
+          <div className="md-wrap" onClick={() => setEditingBody(true)}>
+            <BodyView blocks={blocks} onToggle={toggleCheck} />
+          </div>
+        )}
 
         <div className="tasks-card">
-          {note.tasks.map((t, i) => (
-            <div key={i} className={"todo" + (t.done ? " done" : "")}>
-              <button className="cb" onClick={() => toggleTask(i)} aria-label={t.done ? "Mark not done" : "Mark done"}><Icon name="check" size={13} /></button>
-              <span dir="auto">{t.text}</span>
-              <button className="task-x" onClick={() => removeTask(i)} aria-label="Remove task"><Icon name="x" size={12} /></button>
-            </div>
-          ))}
           <div className="todo add">
             <span className="cb ghost"><Icon name="plus" size={12} /></span>
             <input value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()} placeholder="Add a task" aria-label="Add a task" />

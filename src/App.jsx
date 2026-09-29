@@ -86,14 +86,20 @@ export default function App() {
           avatarLetter={avatarLetter}
           sheetOpen={sheetOpen}
           onSheetChange={setSheetOpen}
-          onNewVoice={() => setView({ name: "record" })}
+          // Sheet dismissal is batched with the navigation on purpose: closing
+          // it in a separate render would pop the back-guard entry and then
+          // re-push it, and the popstate arrives after the push and bounces
+          // the app back home mid-transition.
+          onNewVoice={() => { setSheetOpen(false); setView({ name: "record" }); }}
           onNewText={async () => {
             const id = await createNote({ type: "text", lifespan: "1w" });
-            setView({ name: "review", id });
+            setSheetOpen(false);
+            setView({ name: "review", id, edit: true });
           }}
           onNewChecklist={async () => {
-            const id = await createNote({ type: "checklist", tasks: [{ text: "", done: false }], lifespan: "1w" });
-            setView({ name: "review", id });
+            const id = await createNote({ type: "checklist", body: "- [ ] ", tasks: [], lifespan: "1w" });
+            setSheetOpen(false);
+            setView({ name: "review", id, edit: true });
           }}
           onOpenNote={(id) => setView({ name: "review", id })}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -117,7 +123,7 @@ export default function App() {
       )}
 
       {view.name === "review" && (
-        <ReviewScreen id={view.id} onDone={() => setView({ name: "home" })} />
+        <ReviewScreen id={view.id} startInEditor={!!view.edit} onDone={() => setView({ name: "home" })} />
       )}
 
       {settingsOpen && (

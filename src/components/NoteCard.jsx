@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { useDrag } from "@use-gesture/react";
 import { lifeInfo, togglePin, reviveNote, updateNote } from "../db";
+import { noteMarkdown, parseBlocks } from "../markdown";
+import MdInline from "./MdInline.jsx";
 import { Icon } from "./Icons.jsx";
 
 function ago(ts) {
@@ -12,11 +14,39 @@ function ago(ts) {
   return new Date(ts).toLocaleDateString();
 }
 
+// Card preview of the markdown body. A single prose line keeps the roomy
+// 6-line clamp; anything structured renders as rows, capped at 5 + "+N more".
+function BodyPreview({ blocks }) {
+  if (blocks.length === 1 && blocks[0].type === "text") {
+    return <div className="note-body" dir="auto">{blocks[0].text}</div>;
+  }
+  return (
+    <div>
+      {blocks.slice(0, 5).map((b, i) =>
+        b.type === "check" ? (
+          <div key={i} className={"todo" + (b.done ? " done" : "")}>
+            <span className="cb"><Icon name="check" size={13} /></span>
+            <span dir="auto"><MdInline text={b.text} /></span>
+          </div>
+        ) : b.type === "heading" ? (
+          <div key={i} className={"md-h md-h" + b.level} dir="auto"><MdInline text={b.text} /></div>
+        ) : b.type === "bullet" ? (
+          <div key={i} className="md-bullet" dir="auto"><MdInline text={b.text} /></div>
+        ) : (
+          <div key={i} className="md-text md-prev-line" dir="auto"><MdInline text={b.text} /></div>
+        )
+      )}
+      {blocks.length > 5 && <div className="todo-more">+{blocks.length - 5} more</div>}
+    </div>
+  );
+}
+
 export default function NoteCard({ note, onOpen, onRequestDelete, dying = false }) {
   const life = lifeInfo(note);
   const dead = note.status === "dead";
   const cardRef = useRef(null);
   const dragged = useRef(false);
+  const blocks = parseBlocks(noteMarkdown(note));
 
   // Horizontal card gestures. touch-action: pan-y keeps vertical scrolling native.
   // Swipe right = pin/unpin (immortality). Swipe left = kill a living note / revive a dead one.
@@ -68,7 +98,7 @@ export default function NoteCard({ note, onOpen, onRequestDelete, dying = false 
     <article
       ref={cardRef}
       {...bind()}
-      className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "") + (dying ? " dying" : "") + (!dead && !dying && life.state === "warn" ? " expiring" : "")}
+      className={"note" + (note.type === "checklist" ? " tinted" : "") + (dead ? " dead" : "") + (dying ? " dying" : "") + (!dead && !dying && life.state === "warn" ? " expiring" : "")}
       onClick={() => { if (dragged.current) { dragged.current = false; return; } onOpen(); }}
     >
       {dying && <span className="rising-ghost"><Icon name="ghost" size={40} /></span>}
@@ -84,20 +114,7 @@ export default function NoteCard({ note, onOpen, onRequestDelete, dying = false 
       )}
       {note.tidied && !dead && <span className="badge"><Icon name="sparkle" size={13} />Tidied</span>}
       {note.title && <div className="note-title" dir="auto">{note.title}</div>}
-      {note.body && <div className="note-body" dir="auto">{note.body}</div>}
-      {note.type === "checklist" && note.tasks.filter((t) => t.text).length > 0 && (
-        <div>
-          {note.tasks.filter((t) => t.text).slice(0, 5).map((t, i) => (
-            <div key={i} className={"todo" + (t.done ? " done" : "")}>
-              <span className="cb"><Icon name="check" size={13} /></span>
-              <span dir="auto">{t.text}</span>
-            </div>
-          ))}
-          {note.tasks.filter((t) => t.text).length > 5 && (
-            <div className="todo-more">+{note.tasks.filter((t) => t.text).length - 5} more</div>
-          )}
-        </div>
-      )}
+      {blocks.length > 0 && <BodyPreview blocks={blocks} />}
       {dead ? (
         <div className="dead-row">
           <span className="st st-dead"><Icon name="skull" size={13} />Dead</span>
