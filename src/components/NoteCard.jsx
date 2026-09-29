@@ -68,10 +68,11 @@ export default function NoteCard({ note, onOpen, onRequestDelete, dying = false 
     <article
       ref={cardRef}
       {...bind()}
-      className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "") + (dying ? " dying" : "")}
+      className={"note" + (note.type === "checklist" && note.tasks.length ? " tinted" : "") + (dead ? " dead" : "") + (dying ? " dying" : "") + (!dead && !dying && life.state === "warn" ? " expiring" : "")}
       onClick={() => { if (dragged.current) { dragged.current = false; return; } onOpen(); }}
     >
       {dying && <span className="rising-ghost"><Icon name="ghost" size={40} /></span>}
+      {dead && <span className="grave-ghost"><Icon name="ghost" size={18} /></span>}
       <span className="swipe-hint left">{dead ? <Icon name="heart" size={16} /> : <Icon name="skull" size={16} />}</span>
       <span className="swipe-hint right"><Icon name="pin" size={16} /></span>
       {note.type === "voice" && (

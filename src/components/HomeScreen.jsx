@@ -1,20 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, lifeInfo, deleteNote } from "../db";
+import { db, deleteNote } from "../db";
 import { useDragDismiss } from "../gestures";
 import ConfirmDialog, { randomDeathNotice } from "./ConfirmDialog.jsx";
 import { Icon } from "./Icons.jsx";
 import NoteCard from "./NoteCard.jsx";
 
 const FILTERS = [
-  { id: "all", label: "All" },
-  { id: "immortal", label: "Immortal", icon: "infinity" },
-  { id: "dying", label: "Dying", icon: "hourglass" },
-  { id: "dead", label: "Dead", icon: "skull" }
+  { id: "living", label: "Living" },
+  { id: "graveyard", label: "Graveyard", icon: "skull" }
 ];
 
 export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSheetChange, onNewVoice, onNewText, onNewChecklist, onOpenNote, onOpenSettings }) {
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("living");
   const [query, setQuery] = useState("");
   const { ref: dragRef, bind: dragBind } = useDragDismiss(() => onSheetChange(false));
   const [confirmNote, setConfirmNote] = useState(null);
@@ -48,9 +46,10 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
 
   const shown = useMemo(() => {
     let list = notes || [];
-    if (filter === "immortal") list = list.filter((n) => n.status === "immortal");
-    else if (filter === "dead") list = list.filter((n) => n.status === "dead");
-    else if (filter === "dying") list = list.filter((n) => { const l = lifeInfo(n); return l.state === "warn"; });
+    // Living = everything not dead (alive + immortal); the graveyard keeps the rest.
+    list = filter === "graveyard"
+      ? list.filter((n) => n.status === "dead")
+      : list.filter((n) => n.status !== "dead");
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((n) => (n.title || "").toLowerCase().includes(q) || (n.body || "").toLowerCase().includes(q) || n.tasks.some((t) => (t.text || "").toLowerCase().includes(q)));
@@ -59,9 +58,7 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
   }, [notes, filter, query]);
 
   const counts = useMemo(() => ({
-    immortal: (notes || []).filter((n) => n.status === "immortal").length,
-    dying: (notes || []).filter((n) => lifeInfo(n).state === "warn").length,
-    dead: (notes || []).filter((n) => n.status === "dead").length
+    graveyard: (notes || []).filter((n) => n.status === "dead").length
   }), [notes]);
 
   return (
@@ -80,7 +77,7 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
           <button key={f.id} className={"chip" + (filter === f.id ? " active" : "")} onClick={() => setFilter(f.id)} role="tab" aria-selected={filter === f.id}>
             {f.icon && <Icon name={f.icon} size={13} />}
             {f.label}
-            {f.id !== "all" && counts[f.id] > 0 && <span className="count">{counts[f.id]}</span>}
+            {counts[f.id] > 0 && <span className="count">{counts[f.id]}</span>}
           </button>
         ))}
       </div>
@@ -94,8 +91,17 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
       ) : shown.length === 0 ? (
         <div className="empty">
           <div className="bigghost"><Icon name="ghost" size={52} /></div>
-          <h2>No {filter === "all" ? "matches" : filter + " notes"}.</h2>
-          <p>{filter === "dead" ? "Nothing has died yet. Give it time." : "Try another filter or search."}</p>
+          {filter === "graveyard" ? (
+            <>
+              <h2>{query.trim() ? "No matches in the graveyard." : "The graveyard is empty."}</h2>
+              <p>{query.trim() ? "No dead note matches that search." : "Nothing has died yet. Give it time."}</p>
+            </>
+          ) : (
+            <>
+              <h2>{query.trim() ? "No living matches." : "Everyone's dead."}</h2>
+              <p>{query.trim() ? "Try another search." : "Every note you had now rests in the graveyard."}</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid">
