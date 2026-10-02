@@ -48,7 +48,7 @@ function BodyView({ blocks, onToggle }) {
   );
 }
 
-export default function ReviewScreen({ id, onDone, startInEditor = false }) {
+export default function ReviewScreen({ id, onDone, startInEditor = false, focusTask = false }) {
   const note = useLiveQuery(() => db.notes.get(id), [id]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -168,7 +168,7 @@ export default function ReviewScreen({ id, onDone, startInEditor = false }) {
         <div className="tasks-card">
           <div className="todo add">
             <span className="cb ghost"><Icon name="plus" size={12} /></span>
-            <input value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()} placeholder="Add a task" aria-label="Add a task" />
+            <input value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()} placeholder="Add a task" aria-label="Add a task" autoFocus={focusTask} />
           </div>
         </div>
       </div>

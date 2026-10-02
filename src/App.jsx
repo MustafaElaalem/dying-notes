@@ -97,9 +97,9 @@ export default function App() {
             setView({ name: "review", id, edit: true });
           }}
           onNewChecklist={async () => {
-            const id = await createNote({ type: "checklist", body: "- [ ] ", tasks: [], lifespan: "1w" });
+            const id = await createNote({ type: "checklist", tasks: [], lifespan: "1w" });
             setSheetOpen(false);
-            setView({ name: "review", id, edit: true });
+            setView({ name: "review", id, focusTask: true });
           }}
           onOpenNote={(id) => setView({ name: "review", id })}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -123,7 +123,7 @@ export default function App() {
       )}
 
       {view.name === "review" && (
-        <ReviewScreen id={view.id} startInEditor={!!view.edit} onDone={() => setView({ name: "home" })} />
+        <ReviewScreen id={view.id} startInEditor={!!view.edit} focusTask={!!view.focusTask} onDone={() => setView({ name: "home" })} />
       )}
 
       {settingsOpen && (
