@@ -46,18 +46,35 @@ export default function ProcessScreen({ blob, duration, onSaved, onCancel }) {
           .map((t) => `- [ ] ${t.trim()}`)
           .join("\n");
         const body = [tidied.body?.trim(), tasksMd].filter(Boolean).join("\n");
-        const id = await createNote({
-          // intent-driven type: a task-intent utterance becomes a checklist note
-          type: tasksMd ? "checklist" : "voice",
-          title: tidied.title,
-          body,
-          tasks: [],
-          rawTranscript: transcript,
-          audio,
-          audioDuration: duration,
-          tidied: true,
-          lifespan: "1w"
-        });
+        let id;
+        try {
+          id = await createNote({
+            // intent-driven type: a task-intent utterance becomes a checklist note
+            type: tasksMd ? "checklist" : "voice",
+            title: tidied.title,
+            body,
+            tasks: [],
+            rawTranscript: transcript,
+            audio,
+            audioDuration: duration,
+            tidied: true,
+            lifespan: "1w"
+          });
+        } catch {
+          // Storage still refused (Safari private mode / quota): the words
+          // survive even if the recording can't.
+          id = await createNote({
+            type: tasksMd ? "checklist" : "voice",
+            title: tidied.title,
+            body,
+            tasks: [],
+            rawTranscript: transcript,
+            audio: null,
+            audioDuration: 0,
+            tidied: true,
+            lifespan: "1w"
+          });
+        }
         onSaved(id);
       } catch (e) {
         setError(e.message || String(e));

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, updateNote, setLifespan, deleteNote, LIFESPANS } from "../db";
+import { db, updateNote, setLifespan, deleteNote, LIFESPANS, noteAudioBlob } from "../db";
 import { noteMarkdown, parseBlocks, toggleCheckLine, appendCheck } from "../markdown";
 import ConfirmDialog, { randomDeathNotice } from "./ConfirmDialog.jsx";
 import MdInline from "./MdInline.jsx";
@@ -9,7 +9,10 @@ import { Icon } from "./Icons.jsx";
 function AudioPlayer({ note }) {
   const ref = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const url = useMemo(() => (note.audio ? URL.createObjectURL(note.audio) : null), [note.audio]);
+  const url = useMemo(() => {
+    const blob = noteAudioBlob(note);
+    return blob ? URL.createObjectURL(blob) : null;
+  }, [note.audio]);
   useEffect(() => () => url && URL.revokeObjectURL(url), [url]);
   if (!url) return null;
   return (

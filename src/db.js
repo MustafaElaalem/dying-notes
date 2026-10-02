@@ -13,17 +13,30 @@ db.version(1).stores({
   notes: "++id, createdAt, expiresAt, status, pinned"
 });
 
+// Safari/WebKit throws "Error preparing Blob/File data to be stored in object
+// store" when a Blob is put into IndexedDB (MediaRecorder blobs always hit it),
+// so audio is persisted as a raw ArrayBuffer + mime string instead.
 export async function createNote({ title = "", body = "", tasks = [], type = "text", rawTranscript = null, audio = null, audioDuration = 0, lifespan = "1w", tidied = false }) {
   const now = Date.now();
   const ms = LIFESPANS[lifespan]?.ms ?? LIFESPANS["1w"].ms;
+  const audioBuf = audio instanceof Blob ? await audio.arrayBuffer() : audio;
+  const audioMime = audio instanceof Blob ? audio.type : "";
   return db.notes.add({
-    title, body, tasks, type, rawTranscript, audio, audioDuration, tidied,
+    title, body, tasks, type, rawTranscript, audio: audioBuf, audioMime, audioDuration, tidied,
     createdAt: now,
     expiresAt: ms === Infinity ? null : now + ms,
     status: ms === Infinity ? "immortal" : "alive",
     lifespan: ms === Infinity ? "immortal" : lifespan,
     pinned: false
   });
+}
+
+// Rebuilds a playable Blob from a stored note. Rows saved before the
+// ArrayBuffer switch (on browsers where storing Blobs works) hold a Blob.
+export function noteAudioBlob(note) {
+  if (!note.audio) return null;
+  if (note.audio instanceof Blob) return note.audio;
+  return new Blob([note.audio], { type: note.audioMime || "audio/webm" });
 }
 
 export async function updateNote(id, changes) {
