@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { APP_TOKEN } from "../src/cohere.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REQ = path.join(HERE, "diag-req.json");
@@ -26,6 +27,7 @@ for (const [label, model, reasoning, maxTokens] of VARIANTS) {
   for (let i = 1; i <= 2; i++) {
     const t0 = Date.now();
     const r = spawnSync("curl", ["-s", "-X", "POST", "-H", "Origin: http://localhost:5173",
+      "-H", `X-App-Token: ${APP_TOKEN}`,
       "-H", "Content-Type: application/json", "--data-binary", "@" + REQ,
       "-o", RESP, "-w", "%{time_total}", "http://127.0.0.1:8799/structure"], { stdio: "pipe" });
     if (r.status !== 0) { console.log("  curl fail", r.stderr + ""); continue; }

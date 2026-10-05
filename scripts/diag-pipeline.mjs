@@ -9,9 +9,11 @@ import { spawnSync } from "node:child_process";
 import { existsSync, statSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { APP_TOKEN } from "../src/cohere.js";
 
 const WORKER = "https://dying-notes-api.mostafa-elaalem.workers.dev";
 const ORIGIN = "https://mustafaelaalem.github.io";
+const AUTH = ["-H", `X-App-Token: ${APP_TOKEN}`];
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SHORT_WAV = path.join(HERE, "diag-fixture-20s.wav");
 const LONG_WAV = path.join(HERE, "diag-fixture-180s.wav");
@@ -49,7 +51,7 @@ function curl(args, timeoutMs = 150_000) {
 function curlJSON(url, bodyFile, label) {
   // 3 retries on transport flakiness (HTTP 000 etc.)
   for (let i = 1; i <= 3; i++) {
-    const r = curl(["-X", "POST", "-H", `Origin: ${ORIGIN}`, "-H", "Content-Type: application/json", "--data-binary", `@${bodyFile}`, url]);
+    const r = curl(["-X", "POST", "-H", `Origin: ${ORIGIN}`, ...AUTH, "-H", "Content-Type: application/json", "--data-binary", `@${bodyFile}`, url]);
     if (r.ok) return r;
     console.log(`  ${label}: attempt ${i} failed (${r.err}), retrying...`);
   }
@@ -107,7 +109,7 @@ for (const f of [SHORT_WAV, LONG_WAV]) {
 // --- /transcribe: webm (production path) unthrottled + mobile emulation ---
 console.log("\n-- /transcribe (webm upload -> Cohere) --");
 for (const [label, file] of [["20s webm", SHORT_WEBM], ["180s webm", LONG_WEBM]]) {
-  const r = curl(["-X", "POST", "-H", `Origin: ${ORIGIN}`,
+  const r = curl(["-X", "POST", "-H", `Origin: ${ORIGIN}`, ...AUTH,
     "-F", "model=cohere-transcribe-arabic-07-2026", "-F", "language=ar",
     "-F", `file=@${file};type=audio/webm;filename=note.webm`, `${WORKER}/transcribe`]);
   if (!r.ok) { record("transcribe", `${label} FAILED ${r.err}`, NaN); continue; }
@@ -117,7 +119,7 @@ for (const [label, file] of [["20s webm", SHORT_WEBM], ["180s webm", LONG_WEBM]]
 console.log("\n-- /transcribe, mobile-uplink emulation --");
 // 256KB/s ≈ 2 Mbps (good 4G up), 64KB/s ≈ 0.5 Mbps (weak mobile uplink)
 for (const rate of ["256K", "64K"]) {
-  const r = curl(["-X", "POST", "-H", `Origin: ${ORIGIN}`,
+  const r = curl(["-X", "POST", "-H", `Origin: ${ORIGIN}`, ...AUTH,
     "--limit-rate", rate,
     "-F", "model=cohere-transcribe-arabic-07-2026", "-F", "language=ar",
     "-F", `file=@${LONG_WEBM};type=audio/webm;filename=note.webm`, `${WORKER}/transcribe`], 300_000);

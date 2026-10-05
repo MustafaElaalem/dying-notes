@@ -4,6 +4,7 @@
 // and reports language-detection accuracy on the non-filler cases.
 
 const WORKER = (process.argv[2] || "https://dying-notes-api.mostafa-elaalem.workers.dev").replace(/\/+$/, "");
+import { APP_TOKEN } from "../src/cohere.js";
 
 // [expected_kind, transcript, expected_language_or_null]
 const GOLDEN = [
@@ -70,7 +71,7 @@ async function structure(transcript, tries = 3) {
       if (REASONING) body.reasoning = REASONING;
       const res = await fetch(`${WORKER}/structure`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Origin: "https://mustafaelaalem.github.io" },
+        headers: { "Content-Type": "application/json", Origin: "https://mustafaelaalem.github.io", "X-App-Token": APP_TOKEN },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(70_000)
       });
