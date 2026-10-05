@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Recorder, fmtTime, MAX_RECORD_SECONDS } from "../audio";
 import { Icon } from "./Icons.jsx";
+import RoboMic from "./RoboMic.jsx";
 
 const BARS = Array.from({ length: 26 }, (_, i) => 0.3 + ((i * 53) % 70) / 100);
 
@@ -55,6 +56,9 @@ export default function RecordScreen({ onDone, onCancel }) {
 
   const left = Math.max(0, MAX_RECORD_SECONDS - secs);
   const windingDown = ready && left <= 15 && left > 0;
+  // Eyes ride the live level: slit while waking, relaxed in silence, pop open
+  // and bounce with the voice. Paused reads as level 0 → relaxed half-open.
+  const eyeScale = ready ? 0.55 + Math.min(1, level) * 1.05 : 0.15;
 
   return (
     <div className="screen capture">
@@ -79,6 +83,7 @@ export default function RecordScreen({ onDone, onCancel }) {
             <div className={"cap-state" + (paused ? " paused" : "")}>
               <span className="recdot" />{windingDown ? `${left}s left` : paused ? "Paused" : ready ? "Listening" : "Starting mic…"}
             </div>
+            <RoboMic size={76} tile eyeScale={eyeScale} className="cap-face" />
             <div className="bigwave">
               {BARS.map((h, i) => {
                 const live = h * (0.35 + level * 1.3);

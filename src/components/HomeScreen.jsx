@@ -4,6 +4,7 @@ import { db, deleteNote } from "../db";
 import { useDragDismiss } from "../gestures";
 import ConfirmDialog, { randomDeathNotice } from "./ConfirmDialog.jsx";
 import { Icon } from "./Icons.jsx";
+import RoboMic from "./RoboMic.jsx";
 import NoteCard from "./NoteCard.jsx";
 
 const FILTERS = [
@@ -122,7 +123,7 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
       )}
 
       <button className="fab" onClick={() => onSheetChange(!sheetOpen)} aria-label="New note">
-        <Icon name={sheetOpen ? "x" : "mic"} size={28} />
+        {sheetOpen ? <Icon name="x" size={28} /> : <RoboMic size={36} />}
       </button>
 
       {sheetOpen && (
@@ -136,7 +137,7 @@ export default function HomeScreen({ avatarLetter = "M", sheetOpen = false, onSh
               </div>
             </div>
             <button className="voice-card" onClick={onNewVoice}>
-              <span className="micb"><Icon name="mic" size={28} /></span>
+              <span className="micb"><RoboMic size={30} /></span>
               <span><b>Voice note</b><small>Speak naturally. It's transcribed, tidied and given a lifespan.</small></span>
               <Icon name="chev" size={22} className="go" />
             </button>

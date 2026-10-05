@@ -82,6 +82,15 @@ function micGlyph(x, y, s) {
   return m;
 }
 
+// robot eyes: two vertical pills punched into the capsule, filled with the
+// background blue. Coordinates mirror icon.svg (eyes at 28..31 / 33..36 x,
+// 19..26.5 y within the 64-unit artboard), re-expressed relative to the
+// glyph anchor (0.5, 0.52) so they scale with the maskable variant.
+function eyesSDF(x, y, s) {
+  const eye = (cx) => sdRoundRect(x, y, cx, 0.52 - 0.1415 * s, 0.0182 * s, 0.0344 * s, 0.0182 * s);
+  return Math.min(eye(0.5 - 0.0304 * s), eye(0.5 + 0.0304 * s));
+}
+
 function render(size, { maskable = false, radius = 0.22 } = {}) {
   const rgba = Buffer.alloc(size * size * 4);
   const bgR = 0x2b, bgG = 0x59, bgB = 0xe0; // cobalt
@@ -89,20 +98,24 @@ function render(size, { maskable = false, radius = 0.22 } = {}) {
   const glyphScale = maskable ? 0.72 : 1; // keep inside maskable safe zone
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
-      let aBg = 0, aFg = 0;
+      let aBg = 0, aFg = 0, aEye = 0;
       for (let sy = 0; sy < SS; sy++) {
         for (let sx = 0; sx < SS; sx++) {
           const x = (px + (sx + 0.5) / SS) / size;
           const y = (py + (sy + 0.5) / SS) / size;
           const db = sdRoundRect(x, y, 0.5, 0.5, 0.5, 0.5, radius);
           if (db < 0) aBg += 1 / (SS * SS);
-          if (db < -0.01 && micGlyph(x, y, glyphScale) < 0) aFg += 1 / (SS * SS);
+          if (db < -0.01 && micGlyph(x, y, glyphScale) < 0) {
+            aFg += 1 / (SS * SS);
+            if (eyesSDF(x, y, glyphScale) < 0) aEye += 1 / (SS * SS);
+          }
         }
       }
       const i = (py * size + px) * 4;
       rgba[i] = bgR; rgba[i + 1] = bgG; rgba[i + 2] = bgB;
       rgba[i + 3] = Math.round(aBg * 255);
       if (aFg > 0) { rgba[i] = 255; rgba[i + 1] = 255; rgba[i + 2] = 255; }
+      if (aEye > 0) { rgba[i] = bgR; rgba[i + 1] = bgG; rgba[i + 2] = bgB; }
     }
   }
   return encodePNG(size, size, rgba);
@@ -114,6 +127,6 @@ writeFileSync(join(outDir, "icon-maskable-512.png"), render(512, { maskable: tru
 console.log("icons written to public/");
 
 // SVG icon for the tab favicon
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2B59E0"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><rect x="25" y="12" width="14" height="24" rx="7" fill="#fff" stroke="none"/><path d="M19 30a13 13 0 0 0 26 0"/><path d="M32 43v8"/><path d="M25 51h14"/></g></svg>`;
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2B59E0"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><rect x="25" y="12" width="14" height="24" rx="7" fill="#fff" stroke="none"/><path d="M19 30a13 13 0 0 0 26 0"/><path d="M32 43v8"/><path d="M25 51h14"/></g><rect x="28" y="19" width="3" height="7.5" rx="1.5" fill="#2B59E0"/><rect x="33" y="19" width="3" height="7.5" rx="1.5" fill="#2B59E0"/></svg>`;
 writeFileSync(join(outDir, "icon.svg"), svg);
 console.log("icon.svg written");

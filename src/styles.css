@@ -239,6 +239,16 @@ input, textarea { font: inherit; color: inherit; }
 }
 .opt:active { transform: translate(2px, 2px); box-shadow: none; }
 
+/* ---------- robo mic face (the icon, alive) ---------- */
+.robomic .eye { transform-box: fill-box; transform-origin: center; }
+.robomic.idle .eye-l { animation: robo-blink 4.2s infinite; }
+.robomic.idle .eye-r { animation: robo-blink 4.2s infinite .05s; }
+@keyframes robo-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  93%, 95%      { transform: scaleY(0.08); }
+}
+.robomic.live .eye { transform: scaleY(var(--eyeh, 1)); transition: transform .09s linear; }
+
 /* ---------- capture (recording) ---------- */
 .screen.capture { background: #15130F; color: #F5F1E8; --g-meta: #A29A8A; --g-hairline: #3B352B; --g-sunken: #1D1A15; --g-card: #262219; --line-strong: #453F33; --lift: transparent; }
 .cap-top { display: flex; align-items: center; justify-content: space-between; padding: max(14px, env(safe-area-inset-top)) 20px 0; }
@@ -508,4 +518,6 @@ input, textarea { font: inherit; color: inherit; }
   .fab, .opt, .voice-card, .donepill, .stopbtn, .revive { transition: none; }
   .note.dead, .grave-ghost, .note.expiring, .note.expiring .hp, .note.expiring .llabel { animation: none !important; }
   .grave-ghost { opacity: .5; }
+  .robomic.idle .eye-l, .robomic.idle .eye-r { animation: none; }
+  .robomic.live .eye { transition: none; transform: none; }
 }
